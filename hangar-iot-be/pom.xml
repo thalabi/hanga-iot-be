@@ -126,4 +126,25 @@
 		</profile>
 	</profiles>
 
+	<distributionManagement>
+
+		<snapshotRepository>
+			<id>kerneldc-nexus</id>
+			<url>${repo-url}/repository/maven-snapshots</url>
+		</snapshotRepository>
+		<repository>
+			<id>kerneldc-nexus</id>
+			<name>Releases</name>
+			<url>${repo-url}/repository/maven-releases</url>
+		</repository>
+
+	</distributionManagement>
+
+	<scm>
+		<url>scm:git:https://github.com/thalabi/hangar-iot-be</url>
+		<connection>scm:git:https://github.com/thalabi/hangar-iot-be</connection>
+		<developerConnection>scm:git:https://github.com/thalabi/hangar-iot-be</developerConnection>
+	  	<tag>HEAD</tag>
+	</scm>
+	
 </project>
