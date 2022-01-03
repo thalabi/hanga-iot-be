@@ -38,7 +38,7 @@ public class UserRepositoryImpl implements UserRepository {
 	@PostConstruct
 	public void loadUserData() {
 		try {
-			userList = objectMapper.readValue(userJsonResource.getFile(), new TypeReference<List<User>>(){});
+			userList = objectMapper.readValue(userJsonResource.getInputStream(), new TypeReference<List<User>>(){});
 			for (User user: userList) {
 				LOGGER.info("Loaded User, username: [{}]", user.getUsername());
 			}
