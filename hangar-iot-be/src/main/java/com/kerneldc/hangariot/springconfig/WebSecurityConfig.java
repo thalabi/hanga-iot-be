@@ -70,7 +70,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		
 		httpSecurity.authorizeRequests()
 				.mvcMatchers("/appInfoController/*", "/securityController/authenticate",
-						"/securityController/forgotPassword", "/securityController/resetPassword",
 						"/webSocketStatsConfigController/changeLoggingPeriod",
 						
 						// TODO temporarily disable security on Websocket
