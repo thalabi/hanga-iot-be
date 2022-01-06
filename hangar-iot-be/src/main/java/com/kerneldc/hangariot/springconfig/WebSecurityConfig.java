@@ -69,7 +69,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		}
 		
 		httpSecurity.authorizeRequests()
-				.mvcMatchers("/securityController/authenticate",
+				.mvcMatchers("/appInfoController/*", "/securityController/authenticate",
 						"/securityController/forgotPassword", "/securityController/resetPassword",
 						"/webSocketStatsConfigController/changeLoggingPeriod",
 						
