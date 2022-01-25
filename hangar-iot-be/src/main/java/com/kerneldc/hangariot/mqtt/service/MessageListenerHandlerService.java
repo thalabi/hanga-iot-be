@@ -26,9 +26,11 @@ public class MessageListenerHandlerService implements MessageHandler {
 	@Value("${websocket.topics.prefix:/topic}")
 	private String WEBSOCKET_TOPICS_PREFIX;
 
-	private final StateAndTelemetryCache stateAndTelemetryCache;
+	private final LastCommandResultCache lastCommandResultCache;
 	private final ObjectMapper objectMapper;
 	private final SimpMessagingTemplate webSocket;
+	
+	private String lineSeparator = System.getProperty("line.separator");
 	
 	@Override
 	public void handleMessage(Message<?> message) throws MessagingException {
@@ -36,7 +38,7 @@ public class MessageListenerHandlerService implements MessageHandler {
 		var timestamp = (long)message.getHeaders().get(MessageHeaders.TIMESTAMP); 
 		var messageString = (String)message.getPayload();
 		
-		LOGGER.info("Message [{}] arrived in topic [{}]", messageString, topicString);
+		LOGGER.info("Message [{}]{} arrived in topic [{}]", messageString, lineSeparator, topicString);
 		
 		if (StringUtils.endsWith(topicString, "/POWER")) {
 			messageString = transformPowerMessageToJson(messageString);
@@ -49,14 +51,19 @@ public class MessageListenerHandlerService implements MessageHandler {
 			throw new MessagingException("Error parsing message string as a JSON object", NestedExceptionUtils.getMostSpecificCause(e));
 		}		
 		
-		
-
-		stateAndTelemetryCache.setData(topicString, messageString);
+				if (StringUtils.endsWith(topicString, "/RESULT")) {
+			try {
+				lastCommandResultCache.setCommandResult(topicString, messageString);
+			} catch (JsonProcessingException e) {
+				e.printStackTrace();
+				throw new MessagingException("Failed to add message to cache.", e);
+			}
+		}
 		
 		var webSocketTopic = WEBSOCKET_TOPICS_PREFIX + "/state-and-telemetry/" + topicString;
 		webSocket.convertAndSend(webSocketTopic, messageString);
 		
-		LOGGER.info("Message [{}], topic [{}] added to cache and WebSocket topic [{}]", messageString, topicString, webSocketTopic);
+		LOGGER.info("Message [{}],{} in topic [{}] added to cache and WebSocket topic [{}]", messageString, lineSeparator, topicString, webSocketTopic);
 	}
 
 	private String addTimeStampToMessage(long timestamp, String message) throws JsonProcessingException {

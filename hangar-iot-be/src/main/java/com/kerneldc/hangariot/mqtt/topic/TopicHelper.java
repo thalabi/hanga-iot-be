@@ -3,10 +3,10 @@ package com.kerneldc.hangariot.mqtt.topic;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.kerneldc.hangariot.mqtt.result.CommandEnum;
 import com.kerneldc.hangariot.mqtt.service.DeviceService;
 
 import lombok.RequiredArgsConstructor;
@@ -17,11 +17,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TopicHelper {
 
-	@Value("${mqtt.topic.template.command-power}")
-	private String commandPowerTopicTemplate;
+	@Value("${mqtt.topic.template.command}")
+	private String commandTopicTemplate;
 	
-	@Value("${mqtt.topic.template.command-telemetry-period}")
-	private String commandTelemetryPeriodTopicTemplate;
+//	@Value("${mqtt.topic.template.command-power}")
+//	private String commandPowerTopicTemplate;
+//	
+//	@Value("${mqtt.topic.template.command-telemetry-period}")
+//	private String commandTelemetryPeriodTopicTemplate;
+//	
+//	@Value("${mqtt.topic.template.command-timezone}")
+//	private String commandTimezoneTemplate;
 
 	
 	@Value("${mqtt.topic.template.state-result}")
@@ -35,34 +41,18 @@ public class TopicHelper {
 	
 	private final DeviceService deviceService;
 	
-	public String getTopic(TopicEnum topicEnum, String device) {
-		var topicTemplate = StringUtils.EMPTY;
-		switch (topicEnum) {
-		case COMMAND_POWER_TOPIC:
-			topicTemplate = commandPowerTopicTemplate;
-			break;
-		case COMMAND_TELEMETRY_PERIOD_TOPIC:
-			topicTemplate = commandTelemetryPeriodTopicTemplate;
-			break;
-		case STATE_RESULT_TOPIC:
-			topicTemplate = stateResultTopicTemplate;
-			break;
-		case STATE_POWER_TOPIC:
-			topicTemplate = statePowerTopicTemplate;
-			break;
-		case TELEMETRY_SENSOR_TOPIC:
-			topicTemplate = telemetrySensorTopicTemplate;
-			break;
-		}
-		return topicTemplate.replace("<device>", device);
+
+	public String getCommandTopic(CommandEnum commandEnum, String device) {
+		return commandTopicTemplate.replace("<device>", device)
+				.replace("<command>", commandEnum.getCommand());
 	}
 
 	public List<String> getTopicsToSubscribeTo() {
 		var topicList = new ArrayList<String>();
 		for (var device : deviceService.getDeviceNameList()) {
-			var stateResultTopic = getTopic(TopicEnum.STATE_RESULT_TOPIC, device);
-			var statePowerTopic = getTopic(TopicEnum.STATE_POWER_TOPIC, device);
-			var telemetrySensorTopic = getTopic(TopicEnum.TELEMETRY_SENSOR_TOPIC, device);
+			var stateResultTopic = stateResultTopicTemplate.replace("<device>", device);
+			var statePowerTopic = statePowerTopicTemplate.replace("<device>", device);
+			var telemetrySensorTopic = telemetrySensorTopicTemplate.replace("<device>", device);
 			topicList.add(stateResultTopic);
 			topicList.add(statePowerTopic);
 			topicList.add(telemetrySensorTopic);
