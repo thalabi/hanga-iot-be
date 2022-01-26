@@ -1,8 +1,9 @@
 package com.kerneldc.hangariot.task;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 
 import com.kerneldc.hangariot.controller.Device;
 import com.kerneldc.hangariot.mqtt.result.CommandEnum;
@@ -12,7 +13,8 @@ import com.kerneldc.hangariot.mqtt.service.SenderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Component
+@Configuration
+@EnableScheduling
 @RequiredArgsConstructor
 @Slf4j
 public class ScheduledTasks {
