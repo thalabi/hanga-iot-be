@@ -14,6 +14,7 @@ public class Device {
 	private Boolean telemetry;
 	private String iotDeviceMake;
 	private String iotDeviceModel;
+	private Boolean enableDataSaver;
 	private DeviceConfigData config;
 	
 }

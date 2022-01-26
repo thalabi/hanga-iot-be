@@ -22,6 +22,7 @@ import com.kerneldc.hangariot.mqtt.result.TimersResult;
 import com.kerneldc.hangariot.mqtt.service.DeviceService;
 import com.kerneldc.hangariot.mqtt.service.LastCommandResultCache;
 import com.kerneldc.hangariot.mqtt.service.SenderService;
+import com.kerneldc.hangariot.task.ScheduledTasks;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +36,7 @@ public class HangarIotController {
 	private final SenderService senderService;
 	private final DeviceService deviceService;
 	private final LastCommandResultCache lastCommandResultCache;
+	private final ScheduledTasks scheduledTasks;
 
     @GetMapping("/ping")
 	public ResponseEntity<PingResponse> ping() {
@@ -237,6 +239,14 @@ public class HangarIotController {
     	return ResponseEntity.ok(null);
     }
     
+    @PostMapping("/increaseTelemetryPeriod")
+	public ResponseEntity<Void> increaseTelemetryPeriod() throws InterruptedException {
+    	LOGGER.info("Begin ...");
+    	scheduledTasks.increaseTelemetryPeriod();
+    	LOGGER.info("End ...");
+    	return ResponseEntity.ok(null);
+    }
+
     private boolean validateDeviceName(String deviceName) {
     	return deviceService.getDeviceNameList().contains(deviceName);
     }

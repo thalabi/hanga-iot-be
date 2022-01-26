@@ -23,6 +23,8 @@ public enum CommandEnum {
 	TIMEDST("timedst", TimeDstResult.class),
 	TIMESTD("timestd", TimeStdResult.class),
 	TELEPERIOD("teleperiod", TelePeriodResult.class),
+	LATITUDE("latitude", LatitudeResult.class),
+	LONGITUDE("longitude", LongitudeResult.class),
 	
 	TIMERS("timers", TimersResult.class),
 	TIMER1("timer1", Timer1Result.class),
