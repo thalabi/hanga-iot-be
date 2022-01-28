@@ -6,6 +6,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import com.kerneldc.hangariot.controller.Device;
+import com.kerneldc.hangariot.exception.ApplicationException;
 import com.kerneldc.hangariot.mqtt.result.CommandEnum;
 import com.kerneldc.hangariot.mqtt.service.DeviceService;
 import com.kerneldc.hangariot.mqtt.service.SenderService;
@@ -19,28 +20,29 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ScheduledTasks {
 
-	@Value("${telemetry-period.increase-to:1800}")
+	@Value("${telemetry.period.increase-to:1800}")
 	private String increaseTelemetryPeriod;
-	@Value("${telemetry-period.default:300}")
+	
+	@Value("${telemetry.period.default:300}")
 	private String decreaseTelemetryPeriod;
 	
 	private final DeviceService deviceService;
 	private final SenderService senderService;
 
 	
-	@Scheduled(cron = "0 0 17 * * *")
-	public void increaseTelemetryPeriod() throws InterruptedException {
+	@Scheduled(cron = "${telemetry.scheduler.increase-task.cron-expression}")
+	public void increaseTelemetryPeriod() throws InterruptedException, ApplicationException {
 		var deviceList = deviceService.getDeviceList();
 		for (Device device: deviceList) {
 			if (Boolean.TRUE.equals(device.getEnableDataSaver())) {
-				LOGGER.info("Icreasing telePeriod for device [{}] to [{}]", device.getName(), increaseTelemetryPeriod);
+				LOGGER.info("Increasing telePeriod for device [{}] to [{}]", device.getName(), increaseTelemetryPeriod);
 				senderService.executeCommand(device.getName(), CommandEnum.TELEPERIOD, increaseTelemetryPeriod);
 			}
 		}
 	}
 	
-	@Scheduled(cron = "0 0 6 * * *")
-	public void restoreTelemetryPeriod() throws InterruptedException {
+	@Scheduled(cron = "${telemetry.scheduler.restore-task.cron-expression}")
+	public void restoreTelemetryPeriod() throws InterruptedException, ApplicationException {
 		var deviceList = deviceService.getDeviceList();
 		for (Device device: deviceList) {
 			if (Boolean.TRUE.equals(device.getEnableDataSaver())) {

@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.kerneldc.hangariot.exception.ApplicationException;
+import com.kerneldc.hangariot.mqtt.topic.TopicHelper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,46 +26,61 @@ import lombok.extern.slf4j.Slf4j;
 public class MessageListenerHandlerService implements MessageHandler {
 
 	@Value("${websocket.topics.prefix:/topic}")
-	private String WEBSOCKET_TOPICS_PREFIX;
+	private String websocketTopicsPrefix;
 
 	private final LastCommandResultCache lastCommandResultCache;
 	private final ObjectMapper objectMapper;
 	private final SimpMessagingTemplate webSocket;
+	private final DeviceService deviceService;
+	private final TopicHelper topicHelper;
 	
 	private String lineSeparator = System.getProperty("line.separator");
 	
 	@Override
-	public void handleMessage(Message<?> message) throws MessagingException {
-		var topicString = (String)message.getHeaders().get(MqttHeaders.RECEIVED_TOPIC);
-		var timestamp = (long)message.getHeaders().get(MessageHeaders.TIMESTAMP); 
-		var messageString = (String)message.getPayload();
+	public void handleMessage(Message<?> messageObject) throws MessagingException {
+		var topic = (String)messageObject.getHeaders().get(MqttHeaders.RECEIVED_TOPIC);
+		var timestamp = (long)messageObject.getHeaders().get(MessageHeaders.TIMESTAMP); 
+		var message = (String)messageObject.getPayload();
 		
-		LOGGER.info("Message [{}]{} arrived in topic [{}]", messageString, lineSeparator, topicString);
+		LOGGER.info("Message [{}]{} arrived in topic [{}]", message, lineSeparator, topic);
 		
-		if (StringUtils.endsWith(topicString, "/POWER")) {
-			messageString = transformPowerMessageToJson(messageString);
+		// message in POWER topic is not in json format
+		if (StringUtils.endsWith(topic, "/POWER")) {
+			message = transformPowerMessageToJson(message);
+		}
+		if (StringUtils.endsWith(topic, "/LWT")) {
+			message = transformLwtMessageToJson(message);
 		}
 		
 		try {
-			messageString = addTimeStampToMessage(timestamp, messageString);
+			message = addTimeStampToMessage(timestamp, message);
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
 			throw new MessagingException("Error parsing message string as a JSON object", NestedExceptionUtils.getMostSpecificCause(e));
 		}		
 		
-				if (StringUtils.endsWith(topicString, "/RESULT")) {
+		if (StringUtils.endsWith(topic, "/RESULT")) {
 			try {
-				lastCommandResultCache.setCommandResult(topicString, messageString);
+				lastCommandResultCache.setCommandResult(topic, message);
 			} catch (JsonProcessingException e) {
 				e.printStackTrace();
 				throw new MessagingException("Failed to add message to cache.", e);
 			}
+		} else {
+			if (StringUtils.endsWith(topic, "/LWT")) {
+				try {
+				setDeviceState(topic, message);
+				} catch (JsonProcessingException | ApplicationException e) {
+					e.printStackTrace();
+					throw new MessagingException("Failed to set device state.", e);
+				}
+			}
 		}
 		
-		var webSocketTopic = WEBSOCKET_TOPICS_PREFIX + "/state-and-telemetry/" + topicString;
-		webSocket.convertAndSend(webSocketTopic, messageString);
+		var webSocketTopic = websocketTopicsPrefix + "/state-and-telemetry/" + topic;
+		webSocket.convertAndSend(webSocketTopic, message);
 		
-		LOGGER.info("Message [{}],{} in topic [{}] added to cache and WebSocket topic [{}]", messageString, lineSeparator, topicString, webSocketTopic);
+		LOGGER.info("Message [{}],{} in topic [{}] added to WebSocket topic [{}]", message, lineSeparator, topic, webSocketTopic);
 	}
 
 	private String addTimeStampToMessage(long timestamp, String message) throws JsonProcessingException {
@@ -73,8 +90,24 @@ public class MessageListenerHandlerService implements MessageHandler {
 	}
 
 	
-	private String transformPowerMessageToJson(String topicString) {
-		return topicString.replaceAll("^(.*)$", "{\"POWER\":\"$1\"}");
+	private String transformPowerMessageToJson(String topic) {
+		return topic.replaceAll("^(.*)$", "{\"POWER\":\"$1\"}");
+	}
+	private String transformLwtMessageToJson(String topic) {
+		return topic.replaceAll("^(.*)$", "{\"LWT\":\"$1\"}");
 	}
 
+	private void setDeviceState(String topicString, String message) throws JsonProcessingException, ApplicationException {
+		var deviceName = topicHelper.getDeviceName(topicString);
+//		Device device = deviceService.getDeviceList().stream().filter(d -> StringUtils.equals(d.getName(), deviceName)).findAny().orElse(null);
+//		if (device == null) {
+//			throw new MessagingException(String.format("Cannot find device name [%s]", deviceName));
+//		}
+//		var jsonMessage = objectMapper.readTree(message);
+//		device.setState(jsonMessage.get("LWT").textValue());
+//		device.setStateChangeTimestamp(jsonMessage.get("timestamp").longValue());
+		
+//		var state = jsonMessage.get("LWT").textValue();
+		lastCommandResultCache.setConnectionState(deviceName, message);
+	}
 }

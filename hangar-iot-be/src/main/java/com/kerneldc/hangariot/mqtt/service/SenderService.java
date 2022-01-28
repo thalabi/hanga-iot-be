@@ -4,6 +4,8 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -45,10 +47,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SenderService {
 
+	// MQTT messages
 	private final MessageSender messageSender;
+	// WebSocket messages
+	private final SimpMessagingTemplate webSocket;
 	private final TopicHelper topicHelper;
 	private final LastCommandResultCache lastCommandResultCache;
 	private final ObjectMapper objectMapper;
+	private final DeviceService deviceService;
+
+	@Value("${websocket.topics.prefix:/topic}")
+	private String websocketTopicsPrefix;
 
 	private static final String UNEXPECTED_RESULT_MESSAGE_FORMAT = "Executing [%s] command with argument [%s] failed. Result came back as [%s], expected [%s]";
 
@@ -59,7 +68,7 @@ public class SenderService {
 		}
 	}
 
-	public void triggerPowerState(String device) throws InterruptedException {
+	public void triggerPowerState(String device) throws InterruptedException, ApplicationException {
 		executeCommand(device, CommandEnum.POWER);
 	}
 
@@ -74,7 +83,7 @@ public class SenderService {
 	}
 
 
-	public void triggerTimezoneValue(String device) throws InterruptedException {
+	public void triggerTimezoneValue(String device) throws InterruptedException, ApplicationException {
 		executeCommand(device, CommandEnum.TIMEZONE);
 	}
 
@@ -98,65 +107,6 @@ public class SenderService {
 		}
 	}
 
-	/*
-	 * comment setTimers below has a timing issue
-	 */
-//	public void setTimers(TimersRequest timersRequest) throws JsonProcessingException, InterruptedException, ApplicationException {
-//		// backlog has a limit of 30 commands and maximum of 698 characters
-//		// split into three sets
-//		var backlogArguments1 = new StringJoiner("; ");
-//		backlogArguments1.add("timer1 " + objectMapper.writeValueAsString(timersRequest.getTimer1()));
-//		backlogArguments1.add("timer2 " + objectMapper.writeValueAsString(timersRequest.getTimer2()));
-//		backlogArguments1.add("timer3 " + objectMapper.writeValueAsString(timersRequest.getTimer3()));
-//		backlogArguments1.add("timer4 " + objectMapper.writeValueAsString(timersRequest.getTimer4()));
-//		backlogArguments1.add("timer5 " + objectMapper.writeValueAsString(timersRequest.getTimer5()));
-//		LOGGER.info("backlog command arguments: [{}]", backlogArguments1.toString());
-//		executeCommand(timersRequest.getDeviceName(), CommandEnum.BACKLOG, backlogArguments1.toString(), false);
-//		
-//		var backlogArguments2 = new StringJoiner("; ");
-//		backlogArguments2.add("timer6 " + objectMapper.writeValueAsString(timersRequest.getTimer6()));
-//		backlogArguments2.add("timer7 " + objectMapper.writeValueAsString(timersRequest.getTimer7()));
-//		backlogArguments2.add("timer8 " + objectMapper.writeValueAsString(timersRequest.getTimer8()));
-//		backlogArguments2.add("timer9 " + objectMapper.writeValueAsString(timersRequest.getTimer9()));
-//		backlogArguments2.add("timer10 " + objectMapper.writeValueAsString(timersRequest.getTimer10()));
-//		LOGGER.info("backlog command arguments: [{}]", backlogArguments2.toString());
-//		executeCommand(timersRequest.getDeviceName(), CommandEnum.BACKLOG, backlogArguments2.toString(), false);
-//		
-//		var backlogArguments3 = new StringJoiner("; ");
-//		backlogArguments3.add("timer11 " + objectMapper.writeValueAsString(timersRequest.getTimer11()));
-//		backlogArguments3.add("timer12 " + objectMapper.writeValueAsString(timersRequest.getTimer12()));
-//		backlogArguments3.add("timer13 " + objectMapper.writeValueAsString(timersRequest.getTimer13()));
-//		backlogArguments3.add("timer14 " + objectMapper.writeValueAsString(timersRequest.getTimer14()));
-//		backlogArguments3.add("timer15 " + objectMapper.writeValueAsString(timersRequest.getTimer15()));
-//		backlogArguments3.add("timer16 " + objectMapper.writeValueAsString(timersRequest.getTimer16()));
-//		LOGGER.info("backlog command arguments: [{}]", backlogArguments3.toString());
-//		executeCommand(timersRequest.getDeviceName(), CommandEnum.BACKLOG, backlogArguments3.toString(), false);
-//
-//		executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMERS, timersRequest.getTimers());
-//		
-//		var result = (TimersResult)executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMERS);
-//		
-//		if (! /* not */ StringUtils.equals(timersRequest.getTimers(), result.getTimers()) ||
-//				! /* not */ timersRequest.getTimer1().equals(result.getTimer1()) ||
-//				! /* not */ timersRequest.getTimer2().equals(result.getTimer2()) ||
-//				! /* not */ timersRequest.getTimer3().equals(result.getTimer3()) ||
-//				! /* not */ timersRequest.getTimer4().equals(result.getTimer4()) ||
-//				! /* not */ timersRequest.getTimer5().equals(result.getTimer5()) ||
-//				! /* not */ timersRequest.getTimer6().equals(result.getTimer6()) ||
-//				! /* not */ timersRequest.getTimer7().equals(result.getTimer7()) ||
-//				! /* not */ timersRequest.getTimer8().equals(result.getTimer8()) ||
-//				! /* not */ timersRequest.getTimer9().equals(result.getTimer9()) ||
-//				! /* not */ timersRequest.getTimer10().equals(result.getTimer10()) ||
-//				! /* not */ timersRequest.getTimer11().equals(result.getTimer11()) ||
-//				! /* not */ timersRequest.getTimer12().equals(result.getTimer12()) ||
-//				! /* not */ timersRequest.getTimer13().equals(result.getTimer13()) ||
-//				! /* not */ timersRequest.getTimer14().equals(result.getTimer14()) ||
-//				! /* not */ timersRequest.getTimer15().equals(result.getTimer15()) ||
-//				! /* not */ timersRequest.getTimer16().equals(result.getTimer16())
-//				) {
-//			throw new ApplicationException(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TIMERS, timersRequest, result, timersRequest));
-//			}
-//	}
 	public void setTimers(TimersRequest timersRequest) throws JsonProcessingException, InterruptedException, ApplicationException {
 		var applicationException = new ApplicationException();
 
@@ -270,7 +220,7 @@ public class SenderService {
 		}
 	}
 	
-	public TimersResult getTimers(String device) throws InterruptedException {
+	public TimersResult getTimers(String device) throws InterruptedException, ApplicationException {
 		return (TimersResult)executeCommand(device, CommandEnum.TIMERS);
 
 	}
@@ -281,15 +231,15 @@ public class SenderService {
 	}
 	
 	
-	private AbstractBaseResult executeCommand(String device, CommandEnum commandEnum) throws InterruptedException {
+	private AbstractBaseResult executeCommand(String device, CommandEnum commandEnum) throws InterruptedException, ApplicationException {
 		return executeCommand(device, commandEnum, StringUtils.EMPTY, true);
 		
 	}
-	public AbstractBaseResult executeCommand(String device, CommandEnum commandEnum, String stringArgument) throws InterruptedException {
+	public AbstractBaseResult executeCommand(String device, CommandEnum commandEnum, String stringArgument) throws InterruptedException, ApplicationException {
 		return executeCommand(device, commandEnum, stringArgument, true);
 	}
 	
-	private synchronized AbstractBaseResult executeCommand(String device, CommandEnum commandEnum, String stringArgument, boolean wait) throws InterruptedException {
+	private synchronized AbstractBaseResult executeCommand(String device, CommandEnum commandEnum, String stringArgument, boolean wait) throws InterruptedException, ApplicationException {
 		if (wait) {
 			var commandTimestamp = new Date().getTime();
 			sendMessage(topicHelper.getCommandTopic(commandEnum, device), stringArgument);
@@ -306,17 +256,35 @@ public class SenderService {
 	}
 
 	private static final int MAX_NUMBER_OF_TRIES = 50;
-    public AbstractBaseResult waitForCommandToExecute(String deviceName, CommandEnum commandEnum, long commandTimestamp) throws InterruptedException {
+	private static final int SLEEP = 100;
+    public AbstractBaseResult waitForCommandToExecute(String deviceName, CommandEnum commandEnum, long commandTimestamp) throws InterruptedException, ApplicationException {
     	AbstractBaseResult result;
     	int count = 0;
 		do {
 			LOGGER.info("Waiting 100 ms for command to finish execution ...");
-			TimeUnit.MILLISECONDS.sleep(100);
+			TimeUnit.MILLISECONDS.sleep(SLEEP);
 			count++;
 			result = lastCommandResultCache.getCommandResult(deviceName, commandEnum);
-		} while (result == null && count <= MAX_NUMBER_OF_TRIES || result != null && result.getTimestamp() <= commandTimestamp && count <= MAX_NUMBER_OF_TRIES);
+		} while (result == null && count < MAX_NUMBER_OF_TRIES || result != null && result.getTimestamp() <= commandTimestamp && count < MAX_NUMBER_OF_TRIES);
+		
+		
+		if (count == MAX_NUMBER_OF_TRIES) {
+			LOGGER.warn("Timed out waiting [{}] seconds for command [{}] to execute on device [{}]", SLEEP * count / 1000, commandEnum, deviceName);
+			throw new ApplicationException("Command timed out"); 
+		}
 		return result;
     }
 
 
+    public void publishConnectionState(String deviceName) throws ApplicationException {
+    	var device = deviceService.getDeviceList().stream().filter(d -> StringUtils.equals(d.getName(), deviceName)).findAny().orElse(null);
+    	if (device == null) {
+    		throw new ApplicationException(String.format("Cannot find device name [%s]", deviceName));
+    	}
+    	
+    	LOGGER.info("Publishing LWT message [{}] of device [{}]", lastCommandResultCache.getConnectionState(deviceName), deviceName);
+
+    	var webSocketTopic = websocketTopicsPrefix + "/state-and-telemetry/" + topicHelper.getLwtTopic(deviceName);
+    	webSocket.convertAndSend(webSocketTopic, lastCommandResultCache.getConnectionState(deviceName));
+    }
 }

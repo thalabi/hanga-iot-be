@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.validation.Valid;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -61,7 +62,7 @@ public class HangarIotController {
 			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
 		}
     	LOGGER.info("End ...");
-    	return ResponseEntity.ok(null);
+    	return ResponseEntity.ok(StringUtils.EMPTY);
     }
 
     /*
@@ -80,11 +81,11 @@ public class HangarIotController {
 			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
 		}
     	LOGGER.info("End ...");
-    	return ResponseEntity.ok(null);
+    	return ResponseEntity.ok(StringUtils.EMPTY);
     }
     
     @PostMapping("/triggerPowerState")
-	public ResponseEntity<String> triggerPowerState(@Valid @RequestBody DeviceRequest deviceRequest) throws InterruptedException {
+	public ResponseEntity<String> triggerPowerState(@Valid @RequestBody DeviceRequest deviceRequest) throws InterruptedException, ApplicationException {
     	LOGGER.info("Begin ...");
     	if (! /* not */ validateDeviceName(deviceRequest.getDeviceName())) {
     		LOGGER.error("Device [{}] not found.", deviceRequest.getDeviceName());
@@ -92,18 +93,18 @@ public class HangarIotController {
     	}
     	senderService.triggerPowerState(deviceRequest.getDeviceName());
     	LOGGER.info("End ...");
-    	return ResponseEntity.ok(null);
+    	return ResponseEntity.ok(StringUtils.EMPTY);
     }
     
     @PostMapping("/triggerTimezoneValue")
-	public ResponseEntity<String> triggerTimezoneValue(@Valid @RequestBody DeviceRequest deviceRequest) throws InterruptedException {
+	public ResponseEntity<String> triggerTimezoneValue(@Valid @RequestBody DeviceRequest deviceRequest) throws InterruptedException, ApplicationException {
     	LOGGER.info("Begin ...");
     	if (! /* not */ validateDeviceName(deviceRequest.getDeviceName())) {
     		return ResponseEntity.badRequest().body("Invalid device name");
     	}
 		senderService.triggerTimezoneValue(deviceRequest.getDeviceName());
     	LOGGER.info("End ...");
-    	return ResponseEntity.ok(null);
+    	return ResponseEntity.ok(StringUtils.EMPTY);
     }
     
     @PostMapping("/setTelePeriod")
@@ -121,7 +122,7 @@ public class HangarIotController {
 		}
     	
     	LOGGER.info("End ...");
-    	return ResponseEntity.ok(null);
+    	return ResponseEntity.ok(StringUtils.EMPTY);
     }
     
     @PostMapping("/setTimezoneOffset")
@@ -139,7 +140,7 @@ public class HangarIotController {
 		}
     	
     	LOGGER.info("End ...");
-    	return ResponseEntity.ok(null);
+    	return ResponseEntity.ok(StringUtils.EMPTY);
     }
     
     // TODO not fully coded
@@ -158,11 +159,11 @@ public class HangarIotController {
 //		}
     	
     	LOGGER.info("End ...");
-    	return ResponseEntity.ok(null);
+    	return ResponseEntity.ok(StringUtils.EMPTY);
     }
     
     @GetMapping("/getTimers")
-    public ResponseEntity<TimersResult> getTimers(@Valid String deviceName) throws JsonProcessingException, InterruptedException {
+    public ResponseEntity<TimersResult> getTimers(@Valid String deviceName) throws JsonProcessingException, InterruptedException, ApplicationException {
     	LOGGER.info("Begin ...");
     	if (! /* not */ validateDeviceName(deviceName)) {
     		return ResponseEntity.badRequest().body(null);
@@ -188,11 +189,11 @@ public class HangarIotController {
 		}
     	
     	LOGGER.info("End ...");
-    	return ResponseEntity.ok(null);
+    	return ResponseEntity.ok(StringUtils.EMPTY);
     }
 
     @PostMapping("/executeFreeFormatCommand")
-	public ResponseEntity<AbstractBaseResult> executeFreeFormatCommand(@Valid @RequestBody FreeFormatCommandRequest freeFormatCommandRequest) throws InterruptedException {
+	public ResponseEntity<AbstractBaseResult> executeFreeFormatCommand(@Valid @RequestBody FreeFormatCommandRequest freeFormatCommandRequest) throws InterruptedException, ApplicationException {
     	LOGGER.info("Begin ...");
     	var deviceName = freeFormatCommandRequest.getDeviceName();
     	if (! /* not */ validateDeviceName(deviceName)) {
@@ -240,13 +241,23 @@ public class HangarIotController {
     }
     
     @PostMapping("/increaseTelemetryPeriod")
-	public ResponseEntity<Void> increaseTelemetryPeriod() throws InterruptedException {
+	public ResponseEntity<Void> increaseTelemetryPeriod() throws InterruptedException, ApplicationException {
     	LOGGER.info("Begin ...");
     	scheduledTasks.increaseTelemetryPeriod();
     	LOGGER.info("End ...");
     	return ResponseEntity.ok(null);
     }
 
+    @PostMapping("/publishConnectionState")
+    public ResponseEntity<String> publishConnectionState(@Valid @RequestBody DeviceRequest deviceRequest) throws ApplicationException {
+    	LOGGER.info("Begin ...");
+    	if (! /* not */ validateDeviceName(deviceRequest.getDeviceName())) {
+    		return ResponseEntity.badRequest().body("Invalid device name");
+    	}
+    	senderService.publishConnectionState(deviceRequest.getDeviceName());
+    	LOGGER.info("End ...");
+    	return ResponseEntity.ok(StringUtils.EMPTY);
+    }
     private boolean validateDeviceName(String deviceName) {
     	return deviceService.getDeviceNameList().contains(deviceName);
     }
