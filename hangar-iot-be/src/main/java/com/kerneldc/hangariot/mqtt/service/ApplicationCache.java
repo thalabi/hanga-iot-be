@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.kerneldc.hangariot.exception.ApplicationException;
+import com.kerneldc.hangariot.mqtt.message.Lwt;
 import com.kerneldc.hangariot.mqtt.result.AbstractBaseResult;
 import com.kerneldc.hangariot.mqtt.result.CommandEnum;
 
@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class LastCommandResultCache {
+public class ApplicationCache {
 	
 	private enum DeviceStateEnum {
 		ONLINE, OFFLINE
@@ -31,7 +31,7 @@ public class LastCommandResultCache {
 
 	private final ObjectMapper objectMapper;
 	private Map<DeviceNameAndCommandEnum, AbstractBaseResult> resultTopicCache = Collections.synchronizedMap(new HashMap<>());
-	private Map<String, String> deviceConnectionStateMap = new HashMap<>();
+	private Map<String, String> deviceConnectionStateCache = new HashMap<>();
 	
 	private record DeviceNameAndCommandEnum(String deviceName, CommandEnum commandEnum) {}
 
@@ -61,7 +61,7 @@ public class LastCommandResultCache {
 	}
 
 	private String extractDeviceName(String topic) {
-		var p = Pattern.compile(".+/(.+)/(RESULT|LWT)");
+		var p = Pattern.compile(".+/(.+)/(RESULT|Lwt)");
 		var m = p.matcher(topic);
 		if (m.matches() && StringUtils.isNotEmpty(m.group(1))) {
 			return m.group(1);
@@ -78,22 +78,28 @@ public class LastCommandResultCache {
 	}
 	
 	public String getConnectionState(String deviceName) {
-		return deviceConnectionStateMap.get(deviceName);
+		return deviceConnectionStateCache.get(deviceName);
 	}
-	public void setConnectionState(String deviceName, String lwtMessage) throws ApplicationException {
-//		DeviceStateEnum state;
-//		try {
-//			state = DeviceStateEnum.valueOf(stateString.toUpperCase());
-//		} catch (IllegalArgumentException e) {
-//			throw new ApplicationException(String.format("Unable to find DeviceStateEnum with value %s", stateString.toUpperCase()), e);
-//		}
-		deviceConnectionStateMap.put(deviceName, lwtMessage);
+	public void setConnectionState(String deviceName, String lwtMessage) {
+		deviceConnectionStateCache.put(deviceName, lwtMessage);
 	}
-
+	public boolean isDeviceOnLine(String deviceName) {
+		var lwtMessage = getConnectionState(deviceName);
+		try {
+			var lwt = objectMapper.readValue(lwtMessage, Lwt.class).getLwt();
+			return StringUtils.equalsAnyIgnoreCase(lwt, "Online");
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
+	
 	@PreDestroy
 	public void terminate() {
 		resultTopicCache.clear();
-		deviceConnectionStateMap.clear();
+		deviceConnectionStateCache.clear();
 	}
 	
 }

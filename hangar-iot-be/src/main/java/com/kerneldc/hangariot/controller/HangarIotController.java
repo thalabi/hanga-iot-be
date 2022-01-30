@@ -20,8 +20,8 @@ import com.kerneldc.hangariot.exception.ApplicationException;
 import com.kerneldc.hangariot.mqtt.result.AbstractBaseResult;
 import com.kerneldc.hangariot.mqtt.result.CommandEnum;
 import com.kerneldc.hangariot.mqtt.result.TimersResult;
+import com.kerneldc.hangariot.mqtt.service.ApplicationCache;
 import com.kerneldc.hangariot.mqtt.service.DeviceService;
-import com.kerneldc.hangariot.mqtt.service.LastCommandResultCache;
 import com.kerneldc.hangariot.mqtt.service.SenderService;
 import com.kerneldc.hangariot.task.ScheduledTasks;
 
@@ -36,7 +36,7 @@ public class HangarIotController {
 
 	private final SenderService senderService;
 	private final DeviceService deviceService;
-	private final LastCommandResultCache lastCommandResultCache;
+	private final ApplicationCache applicationCache;
 	private final ScheduledTasks scheduledTasks;
 
     @GetMapping("/ping")
@@ -57,7 +57,7 @@ public class HangarIotController {
     	}
     	try {
 			senderService.togglePower(togglePowerRequest.getDeviceName(), togglePowerRequest.getPowerStateRequested());
-		} catch (ApplicationException e) {
+		} catch (ApplicationException | JsonProcessingException e) {
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
 		}
@@ -68,15 +68,15 @@ public class HangarIotController {
     /*
      * Should be used by devices that support sensor data like the Sonoff S-31 
      */
-    @PostMapping("/triggerSensorData")
-	public ResponseEntity<String> triggerSensorData(@Valid @RequestBody DeviceRequest deviceRequest) throws InterruptedException {
+    @PostMapping("/triggerPublishSensorData")
+	public ResponseEntity<String> triggerPublishSensorData(@Valid @RequestBody DeviceRequest deviceRequest) throws InterruptedException {
     	LOGGER.info("Begin ...");
     	if (! /* not */ validateDeviceName(deviceRequest.getDeviceName())) {
     		return ResponseEntity.badRequest().body("Invalid device name");
     	}
     	try {
-			senderService.triggerSensorData(deviceRequest.getDeviceName());
-		} catch (ApplicationException e) {
+			senderService.triggerPublishSensorData(deviceRequest.getDeviceName());
+		} catch (ApplicationException | JsonProcessingException e) {
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
 		}
@@ -84,20 +84,20 @@ public class HangarIotController {
     	return ResponseEntity.ok(StringUtils.EMPTY);
     }
     
-    @PostMapping("/triggerPowerState")
-	public ResponseEntity<String> triggerPowerState(@Valid @RequestBody DeviceRequest deviceRequest) throws InterruptedException, ApplicationException {
+    @PostMapping("/triggerPublishPowerState")
+	public ResponseEntity<String> triggerPublishPowerState(@Valid @RequestBody DeviceRequest deviceRequest) throws InterruptedException, JsonProcessingException {
     	LOGGER.info("Begin ...");
     	if (! /* not */ validateDeviceName(deviceRequest.getDeviceName())) {
     		LOGGER.error("Device [{}] not found.", deviceRequest.getDeviceName());
     		return ResponseEntity.badRequest().body("Invalid device name");
     	}
-    	senderService.triggerPowerState(deviceRequest.getDeviceName());
+    	senderService.triggerPublishPowerState(deviceRequest.getDeviceName());
     	LOGGER.info("End ...");
     	return ResponseEntity.ok(StringUtils.EMPTY);
     }
     
     @PostMapping("/triggerTimezoneValue")
-	public ResponseEntity<String> triggerTimezoneValue(@Valid @RequestBody DeviceRequest deviceRequest) throws InterruptedException, ApplicationException {
+	public ResponseEntity<String> triggerTimezoneValue(@Valid @RequestBody DeviceRequest deviceRequest) throws InterruptedException, JsonProcessingException {
     	LOGGER.info("Begin ...");
     	if (! /* not */ validateDeviceName(deviceRequest.getDeviceName())) {
     		return ResponseEntity.badRequest().body("Invalid device name");
@@ -116,7 +116,7 @@ public class HangarIotController {
     	}
     	try {
 			senderService.setTelePeriod(deviceName, timezoneRequest.getTelePeriod());
-		} catch (ApplicationException e) {
+		} catch (ApplicationException | JsonProcessingException e) {
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
 		}
@@ -134,7 +134,7 @@ public class HangarIotController {
     	}
     	try {
 			senderService.setTimezoneOffset(deviceName, timezoneRequest.getTimezoneOffset());
-		} catch (ApplicationException e) {
+		} catch (ApplicationException | JsonProcessingException e) {
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
 		}
@@ -193,7 +193,7 @@ public class HangarIotController {
     }
 
     @PostMapping("/executeFreeFormatCommand")
-	public ResponseEntity<AbstractBaseResult> executeFreeFormatCommand(@Valid @RequestBody FreeFormatCommandRequest freeFormatCommandRequest) throws InterruptedException, ApplicationException {
+	public ResponseEntity<AbstractBaseResult> executeFreeFormatCommand(@Valid @RequestBody FreeFormatCommandRequest freeFormatCommandRequest) throws InterruptedException, ApplicationException, JsonProcessingException {
     	LOGGER.info("Begin ...");
     	var deviceName = freeFormatCommandRequest.getDeviceName();
     	if (! /* not */ validateDeviceName(deviceName)) {
@@ -235,26 +235,26 @@ public class HangarIotController {
     @GetMapping("/dumpCache")
 	public ResponseEntity<Void> dumpCache() {
     	LOGGER.info("Begin ...");
-    	lastCommandResultCache.dumpCache();
+    	applicationCache.dumpCache();
     	LOGGER.info("End ...");
     	return ResponseEntity.ok(null);
     }
     
     @PostMapping("/increaseTelemetryPeriod")
-	public ResponseEntity<Void> increaseTelemetryPeriod() throws InterruptedException, ApplicationException {
+	public ResponseEntity<Void> increaseTelemetryPeriod() throws InterruptedException, ApplicationException, JsonProcessingException {
     	LOGGER.info("Begin ...");
     	scheduledTasks.increaseTelemetryPeriod();
     	LOGGER.info("End ...");
     	return ResponseEntity.ok(null);
     }
 
-    @PostMapping("/publishConnectionState")
-    public ResponseEntity<String> publishConnectionState(@Valid @RequestBody DeviceRequest deviceRequest) throws ApplicationException {
+    @PostMapping("/triggerPublishConnectionState")
+    public ResponseEntity<String> triggerPublishConnectionState(@Valid @RequestBody DeviceRequest deviceRequest) throws ApplicationException {
     	LOGGER.info("Begin ...");
     	if (! /* not */ validateDeviceName(deviceRequest.getDeviceName())) {
     		return ResponseEntity.badRequest().body("Invalid device name");
     	}
-    	senderService.publishConnectionState(deviceRequest.getDeviceName());
+    	senderService.triggerPublishConnectionState(deviceRequest.getDeviceName());
     	LOGGER.info("End ...");
     	return ResponseEntity.ok(StringUtils.EMPTY);
     }

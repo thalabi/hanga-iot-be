@@ -1,6 +1,8 @@
 package com.kerneldc.hangariot.mqtt.service;
 
-import org.apache.commons.lang3.StringUtils;
+import java.util.List;
+import java.util.regex.Pattern;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.integration.mqtt.support.MqttHeaders;
@@ -14,8 +16,8 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.kerneldc.hangariot.exception.ApplicationException;
 import com.kerneldc.hangariot.mqtt.topic.TopicHelper;
+import com.kerneldc.hangariot.mqtt.topic.TopicHelper.TopicSuffixEnum;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,30 +30,28 @@ public class MessageListenerHandlerService implements MessageHandler {
 	@Value("${websocket.topics.prefix:/topic}")
 	private String websocketTopicsPrefix;
 
-	private final LastCommandResultCache lastCommandResultCache;
+	private final ApplicationCache applicationCache;
 	private final ObjectMapper objectMapper;
 	private final SimpMessagingTemplate webSocket;
-	private final DeviceService deviceService;
 	private final TopicHelper topicHelper;
 	
 	private String lineSeparator = System.getProperty("line.separator");
 	
 	@Override
 	public void handleMessage(Message<?> messageObject) throws MessagingException {
-		var topic = (String)messageObject.getHeaders().get(MqttHeaders.RECEIVED_TOPIC);
+		var fullTopic = (String)messageObject.getHeaders().get(MqttHeaders.RECEIVED_TOPIC);
 		var timestamp = (long)messageObject.getHeaders().get(MessageHeaders.TIMESTAMP); 
 		var message = (String)messageObject.getPayload();
 		
-		LOGGER.info("Message [{}]{} arrived in topic [{}]", message, lineSeparator, topic);
+		LOGGER.info("Message [{}]{} arrived in topic [{}]", message, lineSeparator, fullTopic);
 		
-		// message in POWER topic is not in json format
-		if (StringUtils.endsWith(topic, "/POWER")) {
-			message = transformPowerMessageToJson(message);
-		}
-		if (StringUtils.endsWith(topic, "/LWT")) {
-			message = transformLwtMessageToJson(message);
+		var topicSuffix = getTopicSuffix(fullTopic);
+		// message in POWER & Lwt topics is not in json format
+		if (topicSuffix.equals(TopicSuffixEnum.POWER) || topicSuffix.equals(TopicSuffixEnum.LWT)) {
+			message = transformMessageToJson(message, topicSuffix);
 		}
 		
+		// add timestamp to all messages
 		try {
 			message = addTimeStampToMessage(timestamp, message);
 		} catch (JsonProcessingException e) {
@@ -59,30 +59,24 @@ public class MessageListenerHandlerService implements MessageHandler {
 			throw new MessagingException("Error parsing message string as a JSON object", NestedExceptionUtils.getMostSpecificCause(e));
 		}		
 		
-		if (StringUtils.endsWith(topic, "/RESULT")) {
+		if (topicSuffix.equals(TopicSuffixEnum.RESULT)) {
 			try {
-				lastCommandResultCache.setCommandResult(topic, message);
+				applicationCache.setCommandResult(fullTopic, message);
 			} catch (JsonProcessingException e) {
-				e.printStackTrace();
 				throw new MessagingException("Failed to add message to cache.", e);
 			}
 		} else {
-			if (StringUtils.endsWith(topic, "/LWT")) {
-				try {
-				setDeviceState(topic, message);
-				} catch (JsonProcessingException | ApplicationException e) {
-					e.printStackTrace();
-					throw new MessagingException("Failed to set device state.", e);
-				}
+			if (topicSuffix.equals(TopicSuffixEnum.LWT)) {
+				applicationCache.setConnectionState(topicHelper.getDeviceName(fullTopic), message);
 			}
 		}
 		
-		var webSocketTopic = websocketTopicsPrefix + "/state-and-telemetry/" + topic;
-		webSocket.convertAndSend(webSocketTopic, message);
-		
-		LOGGER.info("Message [{}],{} in topic [{}] added to WebSocket topic [{}]", message, lineSeparator, topic, webSocketTopic);
+		if (List.of(TopicSuffixEnum.LWT,TopicSuffixEnum.POWER, TopicSuffixEnum.SENSOR).contains(topicSuffix)) {
+			var webSocketTopic = websocketTopicsPrefix + "/state-and-telemetry/" + fullTopic;
+			webSocket.convertAndSend(webSocketTopic, message);
+			LOGGER.info("Message [{}],{} in topic [{}] added to WebSocket topic [{}]", message, lineSeparator, fullTopic, webSocketTopic);
+		}
 	}
-
 	private String addTimeStampToMessage(long timestamp, String message) throws JsonProcessingException {
 		var jsonMessage = objectMapper.readTree(message);
 		((ObjectNode) jsonMessage).put("timestamp", timestamp);
@@ -90,24 +84,17 @@ public class MessageListenerHandlerService implements MessageHandler {
 	}
 
 	
-	private String transformPowerMessageToJson(String topic) {
-		return topic.replaceAll("^(.*)$", "{\"POWER\":\"$1\"}");
-	}
-	private String transformLwtMessageToJson(String topic) {
-		return topic.replaceAll("^(.*)$", "{\"LWT\":\"$1\"}");
+	private String transformMessageToJson(String message, TopicSuffixEnum fieldName) {
+		return "{\"" + fieldName +  "\":\"" + message + "\"}";
 	}
 
-	private void setDeviceState(String topicString, String message) throws JsonProcessingException, ApplicationException {
-		var deviceName = topicHelper.getDeviceName(topicString);
-//		Device device = deviceService.getDeviceList().stream().filter(d -> StringUtils.equals(d.getName(), deviceName)).findAny().orElse(null);
-//		if (device == null) {
-//			throw new MessagingException(String.format("Cannot find device name [%s]", deviceName));
-//		}
-//		var jsonMessage = objectMapper.readTree(message);
-//		device.setState(jsonMessage.get("LWT").textValue());
-//		device.setStateChangeTimestamp(jsonMessage.get("timestamp").longValue());
+	private TopicSuffixEnum getTopicSuffix(String topic) {
+		var pattern = Pattern.compile("^(.+)/(.+)/(.+)$");
+		var matcher = pattern.matcher(topic);
+		if (! /* not */ matcher.matches()) {
+			throw new IllegalArgumentException(String.format("Could not get suffix from %s", topic));
+		}
+		return TopicSuffixEnum.valueOf(matcher.group(3));
 		
-//		var state = jsonMessage.get("LWT").textValue();
-		lastCommandResultCache.setConnectionState(deviceName, message);
 	}
 }

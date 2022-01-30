@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kerneldc.hangariot.controller.Device;
 import com.kerneldc.hangariot.exception.ApplicationException;
 import com.kerneldc.hangariot.mqtt.result.CommandEnum;
@@ -31,7 +32,7 @@ public class ScheduledTasks {
 
 	
 	@Scheduled(cron = "${telemetry.scheduler.increase-task.cron-expression}")
-	public void increaseTelemetryPeriod() throws InterruptedException, ApplicationException {
+	public void increaseTelemetryPeriod() throws InterruptedException, ApplicationException, JsonProcessingException {
 		var deviceList = deviceService.getDeviceList();
 		for (Device device: deviceList) {
 			if (Boolean.TRUE.equals(device.getEnableDataSaver())) {
@@ -42,7 +43,7 @@ public class ScheduledTasks {
 	}
 	
 	@Scheduled(cron = "${telemetry.scheduler.restore-task.cron-expression}")
-	public void restoreTelemetryPeriod() throws InterruptedException, ApplicationException {
+	public void restoreTelemetryPeriod() throws InterruptedException, ApplicationException, JsonProcessingException {
 		var deviceList = deviceService.getDeviceList();
 		for (Device device: deviceList) {
 			if (Boolean.TRUE.equals(device.getEnableDataSaver())) {

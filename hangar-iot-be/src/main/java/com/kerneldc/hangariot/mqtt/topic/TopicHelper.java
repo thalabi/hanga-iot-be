@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.kerneldc.hangariot.mqtt.result.CommandEnum;
@@ -18,52 +17,46 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class TopicHelper {
-
-	@Value("${mqtt.topic.template.command}")
-	private String commandTopicTemplate;
 	
+	public enum TopicSuffixEnum {
+		LWT, POWER, SENSOR, RESULT
+	}
 
-	@Value("${mqtt.topic.template.state-result}")
-	private String stateResultTopicTemplate;
+	private static final String DEVICE_ARG = "<device>";
 	
-	@Value("${mqtt.topic.template.state-power}")
-	private String statePowerTopicTemplate;
-
+	private static final String COMMAND_TOPIC_TEMPLATE = "cmnd/<device>/<command>";
 	
-	@Value("${mqtt.topic.template.telemetry-sensor}")
-	private String telemetrySensorTopicTemplate;
-
-	@Value("${mqtt.topic.template.last-will-and-testament}")
-	private String lastWillAndTestamentTopicTemplate;
+	private static final String LAST_WILL_AND_TESTAMENT_TOPIC_TEMPLATE = "tele/<device>/" + TopicSuffixEnum.LWT;
+	private static final String POWER_TOPIC_TEMPLATE = "stat/<device>/" + TopicSuffixEnum.POWER;
+	private static final String SENSOR_TOPIC_TEMPLATE = "tele/<device>/" + TopicSuffixEnum.SENSOR;
+	private static final String RESULT_TOPIC_TEMPLATE = "stat/<device>/" + TopicSuffixEnum.RESULT;
 	
 
 	private final DeviceService deviceService;
 	
 
 	public String getCommandTopic(CommandEnum commandEnum, String deviceName) {
-		return commandTopicTemplate.replace("<device>", deviceName)
+		return COMMAND_TOPIC_TEMPLATE.replace(DEVICE_ARG, deviceName)
 				.replace("<command>", commandEnum.getCommand());
 	}
 
 	public String getLwtTopic(String deviceName) {
-		return lastWillAndTestamentTopicTemplate.replace("<device>", deviceName);
+		return LAST_WILL_AND_TESTAMENT_TOPIC_TEMPLATE.replace(DEVICE_ARG, deviceName);
 	}
 
 
 	public List<String> getTopicsToSubscribeTo() {
 		var topicList = new ArrayList<String>();
-		for (var device : deviceService.getDeviceNameList()) {
-			var stateResultTopic = stateResultTopicTemplate.replace("<device>", device);
-			var statePowerTopic = statePowerTopicTemplate.replace("<device>", device);
-			var telemetrySensorTopic = telemetrySensorTopicTemplate.replace("<device>", device);
-			var lastWillAndTestamentTopic = lastWillAndTestamentTopicTemplate.replace("<device>", device);
-			topicList.add(stateResultTopic);
-			topicList.add(statePowerTopic);
-			topicList.add(telemetrySensorTopic);
-			topicList.add(lastWillAndTestamentTopic);
-			LOGGER.info("Device [{}], subscribed topics are [{}], [{}], [{}] & [{}]", device, stateResultTopic,
-					statePowerTopic, telemetrySensorTopic, lastWillAndTestamentTopic);
+		
+		for (var device : deviceService.getDeviceList()) {
+			topicList.add(RESULT_TOPIC_TEMPLATE.replace(DEVICE_ARG, device.getName()));
+			topicList.add(POWER_TOPIC_TEMPLATE.replace(DEVICE_ARG, device.getName()));
+			topicList.add(LAST_WILL_AND_TESTAMENT_TOPIC_TEMPLATE.replace(DEVICE_ARG, device.getName()));
+			if (Boolean.TRUE.equals(device.getTelemetry())) {
+				topicList.add(SENSOR_TOPIC_TEMPLATE.replace(DEVICE_ARG, device.getName()));
+			}
 		}
+		LOGGER.info("Subscribing to following MQTT topics [{}]", String.join(", ", topicList));
 		return topicList;
 	}
 
