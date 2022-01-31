@@ -21,7 +21,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.handler.annotation.Header;
 
-import com.kerneldc.hangariot.mqtt.service.MessageListenerHandlerService;
+import com.kerneldc.hangariot.mqtt.service.MessageListenerRouter;
 import com.kerneldc.hangariot.mqtt.topic.TopicHelper;
 
 @Configuration
@@ -75,10 +75,15 @@ public class MqttConfig {
         return adapter;
     }
 	
+//	@Bean
+//    @ServiceActivator(inputChannel = "mqttInboundChannel")
+//    public MessageHandler messageHandler(MessageListenerHandlerService messageListenerHandlerService) {
+//		return messageListenerHandlerService;
+//    }
 	@Bean
     @ServiceActivator(inputChannel = "mqttInboundChannel")
-    public MessageHandler messageHandler(MessageListenerHandlerService messageListenerHandlerService) {
-		return messageListenerHandlerService;
+    public MessageHandler messageHandler(MessageListenerRouter messageListenerRouter) {
+		return messageListenerRouter;
     }
 	// End - inbound
 	
