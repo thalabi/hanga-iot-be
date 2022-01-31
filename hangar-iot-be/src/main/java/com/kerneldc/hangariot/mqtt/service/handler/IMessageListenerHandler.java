@@ -1,4 +1,4 @@
-package com.kerneldc.hangariot.mqtt.service;
+package com.kerneldc.hangariot.mqtt.service.handler;
 
 public interface IMessageListenerHandler {
 

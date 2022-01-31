@@ -1,13 +1,16 @@
-package com.kerneldc.hangariot.mqtt.service;
+package com.kerneldc.hangariot.mqtt.service.handler;
 
 import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.NestedExceptionUtils;
+import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.kerneldc.hangariot.mqtt.service.ApplicationCache;
 import com.kerneldc.hangariot.mqtt.topic.TopicHelper;
 import com.kerneldc.hangariot.mqtt.topic.TopicHelper.TopicSuffixEnum;
 
@@ -16,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @RequiredArgsConstructor
 @Slf4j
-public abstract class AbstractMessageListenerHandlerService implements IMessageListenerHandler {
+public abstract class AbstractMessageListenerHandler implements IMessageListenerHandler {
 	
 	@Value("${websocket.topics.prefix:/topic}")
 	protected String websocketTopicsPrefix;
@@ -28,9 +31,6 @@ public abstract class AbstractMessageListenerHandlerService implements IMessageL
 	
 	protected String lineSeparator = System.getProperty("line.separator");
 
-	public abstract boolean canHandleMessage(String fullTopic);
-	public abstract void handleMessage(String fullTopic, long timestamp, String message);
-	
 	protected TopicSuffixEnum getTopicSuffix(String topic) {
 		var pattern = Pattern.compile("^(.+)/(.+)/(.+)$");
 		var matcher = pattern.matcher(topic);
@@ -51,10 +51,20 @@ public abstract class AbstractMessageListenerHandlerService implements IMessageL
 		return objectMapper.writeValueAsString(jsonMessage);
 	}
 
-	protected void publishMessageToWebSocket(String fullTopic, String message) {
+	protected void publishMessageToWebSocket(String fullTopic, String messageString) {
 		var webSocketTopic = websocketTopicsPrefix + "/state-and-telemetry/" + fullTopic;
-		webSocket.convertAndSend(webSocketTopic, message);
-		LOGGER.info("Message [{}],{} in topic [{}] added to WebSocket topic [{}]", message, lineSeparator, fullTopic, webSocketTopic);
-
+		webSocket.convertAndSend(webSocketTopic, messageString);
+		LOGGER.info("Message [{}],{} in topic [{}] added to WebSocket topic [{}]", messageString, lineSeparator, fullTopic, webSocketTopic);
+	}
+	protected void publishMessageToWebSocket(String fullTopic, Object messageObject) {
+		String messageString;
+		try {
+			messageString = objectMapper.writeValueAsString(messageObject);
+		} catch (JsonProcessingException e) {
+			throw new MessagingException("Error serializing LWT object to string", NestedExceptionUtils.getMostSpecificCause(e));
+		}
+		var webSocketTopic = websocketTopicsPrefix + "/state-and-telemetry/" + fullTopic;
+		webSocket.convertAndSend(webSocketTopic, messageString);
+		LOGGER.info("Message [{}],{} in topic [{}] added to WebSocket topic [{}]", messageString, lineSeparator, fullTopic, webSocketTopic);
 	}
 }

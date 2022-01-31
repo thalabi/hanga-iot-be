@@ -57,7 +57,7 @@ public class HangarIotController {
     	}
     	try {
 			senderService.togglePower(togglePowerRequest.getDeviceName(), togglePowerRequest.getPowerStateRequested());
-		} catch (ApplicationException | JsonProcessingException e) {
+		} catch (ApplicationException e) {
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
 		}
@@ -76,7 +76,7 @@ public class HangarIotController {
     	}
     	try {
 			senderService.triggerPublishSensorData(deviceRequest.getDeviceName());
-		} catch (ApplicationException | JsonProcessingException e) {
+		} catch (ApplicationException e) {
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
 		}
@@ -116,7 +116,7 @@ public class HangarIotController {
     	}
     	try {
 			senderService.setTelePeriod(deviceName, timezoneRequest.getTelePeriod());
-		} catch (ApplicationException | JsonProcessingException e) {
+		} catch (ApplicationException e) {
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
 		}
@@ -134,7 +134,7 @@ public class HangarIotController {
     	}
     	try {
 			senderService.setTimezoneOffset(deviceName, timezoneRequest.getTimezoneOffset());
-		} catch (ApplicationException | JsonProcessingException e) {
+		} catch (ApplicationException e) {
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
 		}

@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.kerneldc.hangariot.mqtt.message.Lwt;
+import com.kerneldc.hangariot.mqtt.message.LwtMessage;
 import com.kerneldc.hangariot.mqtt.result.AbstractBaseResult;
 import com.kerneldc.hangariot.mqtt.result.CommandEnum;
 
@@ -31,7 +31,7 @@ public class ApplicationCache {
 
 	private final ObjectMapper objectMapper;
 	private Map<DeviceNameAndCommandEnum, AbstractBaseResult> resultTopicCache = Collections.synchronizedMap(new HashMap<>());
-	private Map<String, String> deviceConnectionStateCache = new HashMap<>();
+	private Map<String, LwtMessage> deviceConnectionStateCache = new HashMap<>();
 	
 	private record DeviceNameAndCommandEnum(String deviceName, CommandEnum commandEnum) {}
 
@@ -61,7 +61,7 @@ public class ApplicationCache {
 	}
 
 	private String extractDeviceName(String topic) {
-		var p = Pattern.compile(".+/(.+)/(RESULT|Lwt)");
+		var p = Pattern.compile(".+/(.+)/(RESULT|LwtMessage)");
 		var m = p.matcher(topic);
 		if (m.matches() && StringUtils.isNotEmpty(m.group(1))) {
 			return m.group(1);
@@ -77,22 +77,15 @@ public class ApplicationCache {
 		}
 	}
 	
-	public String getConnectionState(String deviceName) {
+	public LwtMessage getConnectionState(String deviceName) {
 		return deviceConnectionStateCache.get(deviceName);
 	}
-	public void setConnectionState(String deviceName, String lwtMessage) {
+	public void setConnectionState(String deviceName, LwtMessage lwtMessage) {
 		deviceConnectionStateCache.put(deviceName, lwtMessage);
 	}
 	public boolean isDeviceOnLine(String deviceName) {
 		var lwtMessage = getConnectionState(deviceName);
-		try {
-			var lwt = objectMapper.readValue(lwtMessage, Lwt.class).getLwt();
-			return StringUtils.equalsAnyIgnoreCase(lwt, "Online");
-		} catch (JsonProcessingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return false;
+		return StringUtils.equalsAnyIgnoreCase(lwtMessage.getLwt(), "Online");
 	}
 	
 	

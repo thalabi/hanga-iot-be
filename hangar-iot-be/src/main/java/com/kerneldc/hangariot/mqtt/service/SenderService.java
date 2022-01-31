@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kerneldc.hangariot.controller.TimeStdRequest;
 import com.kerneldc.hangariot.controller.TimersRequest;
 import com.kerneldc.hangariot.exception.ApplicationException;
-import com.kerneldc.hangariot.mqtt.message.Lwt;
+import com.kerneldc.hangariot.mqtt.message.LwtMessage;
 import com.kerneldc.hangariot.mqtt.result.AbstractBaseResult;
 import com.kerneldc.hangariot.mqtt.result.CommandEnum;
 import com.kerneldc.hangariot.mqtt.result.PowerResult;
@@ -61,7 +61,7 @@ public class SenderService {
 
 	private static final String UNEXPECTED_RESULT_MESSAGE_FORMAT = "Executing [%s] command with argument [%s] failed. Result came back as [%s], expected [%s]";
 
-	public void togglePower(String device, String powerStateExpected) throws InterruptedException, ApplicationException, JsonProcessingException {
+	public void togglePower(String device, String powerStateExpected) throws InterruptedException, ApplicationException {
 		var result = (PowerResult)executeCommand(device, CommandEnum.POWER, "2"); // 2 toggles power
 		if (! /* not */ applicationCache.isDeviceOnLine(device)) {
 			return;
@@ -71,11 +71,11 @@ public class SenderService {
 		}
 	}
 
-	public void triggerPublishPowerState(String device) throws InterruptedException, JsonProcessingException {
+	public void triggerPublishPowerState(String device) throws InterruptedException {
 		executeCommand(device, CommandEnum.POWER);
 	}
 
-	public void triggerPublishSensorData(String device) throws InterruptedException, ApplicationException, JsonProcessingException {
+	public void triggerPublishSensorData(String device) throws InterruptedException, ApplicationException {
 		// issue the command without an argument to get the teleperiod value
 		var result = (TelePeriodResult)executeCommand(device, CommandEnum.TELEPERIOD);
 		if (! /* not */ applicationCache.isDeviceOnLine(device)) {
@@ -92,11 +92,11 @@ public class SenderService {
 	}
 
 
-	public void triggerTimezoneValue(String device) throws InterruptedException, JsonProcessingException {
+	public void triggerTimezoneValue(String device) throws InterruptedException {
 		executeCommand(device, CommandEnum.TIMEZONE);
 	}
 
-	public void setTelePeriod(String device, String telePeriod) throws InterruptedException, ApplicationException, JsonProcessingException {
+	public void setTelePeriod(String device, String telePeriod) throws InterruptedException, ApplicationException {
 		var result = (TelePeriodResult)executeCommand(device, CommandEnum.TELEPERIOD, telePeriod);
 		if (! /* not */ applicationCache.isDeviceOnLine(device)) {
 			return;
@@ -106,7 +106,7 @@ public class SenderService {
 		}
 	}
 
-	public void setTimezoneOffset(String device, String timezoneOffset) throws InterruptedException, ApplicationException, JsonProcessingException {
+	public void setTimezoneOffset(String device, String timezoneOffset) throws InterruptedException, ApplicationException {
 		var result = (TimezoneResult)executeCommand(device, CommandEnum.TIMEZONE, timezoneOffset);
 		if (! /* not */ applicationCache.isDeviceOnLine(device)) {
 			return;
@@ -235,7 +235,7 @@ public class SenderService {
 		}
 	}
 	
-	public TimersResult getTimers(String device) throws InterruptedException, JsonProcessingException {
+	public TimersResult getTimers(String device) throws InterruptedException {
 		return (TimersResult)executeCommand(device, CommandEnum.TIMERS);
 
 	}
@@ -246,15 +246,15 @@ public class SenderService {
 	}
 	
 	
-	private AbstractBaseResult executeCommand(String device, CommandEnum commandEnum) throws InterruptedException, JsonProcessingException {
+	private AbstractBaseResult executeCommand(String device, CommandEnum commandEnum) throws InterruptedException {
 		return executeCommand(device, commandEnum, StringUtils.EMPTY, true);
 		
 	}
-	public AbstractBaseResult executeCommand(String device, CommandEnum commandEnum, String stringArgument) throws InterruptedException, JsonProcessingException {
+	public AbstractBaseResult executeCommand(String device, CommandEnum commandEnum, String stringArgument) throws InterruptedException {
 		return executeCommand(device, commandEnum, stringArgument, true);
 	}
 	
-	private synchronized AbstractBaseResult executeCommand(String device, CommandEnum commandEnum, String stringArgument, boolean wait) throws InterruptedException, JsonProcessingException {
+	private synchronized AbstractBaseResult executeCommand(String device, CommandEnum commandEnum, String stringArgument, boolean wait) throws InterruptedException {
 		if (wait) {
 			var commandTimestamp = new Date().getTime();
 			sendMessage(topicHelper.getCommandTopic(commandEnum, device), stringArgument);
@@ -272,7 +272,7 @@ public class SenderService {
 
 	private static final int MAX_NUMBER_OF_TRIES = 50;
 	private static final int SLEEP_MILLISECONDS = 100;
-	public AbstractBaseResult waitForCommandToExecute(String deviceName, CommandEnum commandEnum, long commandTimestamp) throws InterruptedException, JsonProcessingException {
+	public AbstractBaseResult waitForCommandToExecute(String deviceName, CommandEnum commandEnum, long commandTimestamp) throws InterruptedException {
     	AbstractBaseResult result;
     	int count = 0;
     	LOGGER.info("Waiting for command to finish execution ...");
@@ -286,10 +286,8 @@ public class SenderService {
 		if (count == MAX_NUMBER_OF_TRIES) {
 			LOGGER.warn("Timed out waiting for command [{}] to execute on device [{}]", commandEnum, deviceName);
 			LOGGER.warn("Marking device [{}] as Offline", deviceName);
-			var lwt = new Lwt();
-			lwt.setLwt("Offline");
-			lwt.setTimestamp(new Date().getTime());
-			applicationCache.setConnectionState(deviceName, objectMapper.writeValueAsString(lwt));
+			var lwtMessage = new LwtMessage("Offline", new Date().getTime());
+			applicationCache.setConnectionState(deviceName, lwtMessage);
 			triggerPublishConnectionState(deviceName);
 		}
 		return result;
@@ -297,7 +295,7 @@ public class SenderService {
 
 
     public void triggerPublishConnectionState(String deviceName) {
-    	LOGGER.info("Publishing Lwt message [{}] of device [{}]", applicationCache.getConnectionState(deviceName), deviceName);
+    	LOGGER.info("Publishing LwtMessage message [{}] of device [{}]", applicationCache.getConnectionState(deviceName), deviceName);
     	var webSocketTopic = websocketTopicsPrefix + "/state-and-telemetry/" + topicHelper.getLwtTopic(deviceName);
     	webSocket.convertAndSend(webSocketTopic, applicationCache.getConnectionState(deviceName));
     }

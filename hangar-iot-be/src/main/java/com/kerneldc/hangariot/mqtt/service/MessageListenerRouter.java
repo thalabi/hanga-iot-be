@@ -9,6 +9,8 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.stereotype.Service;
 
+import com.kerneldc.hangariot.mqtt.service.handler.IMessageListenerHandler;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
