@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kerneldc.hangariot.exception.ApplicationException;
+import com.kerneldc.hangariot.exception.DeviceOfflineException;
 import com.kerneldc.hangariot.mqtt.result.AbstractBaseResult;
 import com.kerneldc.hangariot.mqtt.result.CommandEnum;
 import com.kerneldc.hangariot.mqtt.result.TimersResult;
@@ -58,8 +59,9 @@ public class HangarIotController {
     	try {
 			senderService.togglePower(togglePowerRequest.getDeviceName(), togglePowerRequest.getPowerStateRequested());
 		} catch (ApplicationException e) {
-			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
+		} catch (DeviceOfflineException e) {
+	    	return ResponseEntity.ok(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
 		}
     	LOGGER.info("End ...");
     	return ResponseEntity.ok(StringUtils.EMPTY);
@@ -79,6 +81,8 @@ public class HangarIotController {
 		} catch (ApplicationException e) {
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
+		} catch (DeviceOfflineException e) {
+	    	return ResponseEntity.ok(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
 		}
     	LOGGER.info("End ...");
     	return ResponseEntity.ok(StringUtils.EMPTY);
@@ -91,7 +95,11 @@ public class HangarIotController {
     		LOGGER.error("Device [{}] not found.", deviceRequest.getDeviceName());
     		return ResponseEntity.badRequest().body("Invalid device name");
     	}
-    	senderService.triggerPublishPowerState(deviceRequest.getDeviceName());
+    	try {
+			senderService.triggerPublishPowerState(deviceRequest.getDeviceName());
+		} catch (DeviceOfflineException e) {
+	    	return ResponseEntity.ok(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
+		}
     	LOGGER.info("End ...");
     	return ResponseEntity.ok(StringUtils.EMPTY);
     }
@@ -102,7 +110,11 @@ public class HangarIotController {
     	if (! /* not */ validateDeviceName(deviceRequest.getDeviceName())) {
     		return ResponseEntity.badRequest().body("Invalid device name");
     	}
-		senderService.triggerTimezoneValue(deviceRequest.getDeviceName());
+		try {
+			senderService.triggerTimezoneValue(deviceRequest.getDeviceName());
+		} catch (DeviceOfflineException e) {
+			return ResponseEntity.ok(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
+		}
     	LOGGER.info("End ...");
     	return ResponseEntity.ok(StringUtils.EMPTY);
     }
@@ -117,8 +129,9 @@ public class HangarIotController {
     	try {
 			senderService.setTelePeriod(deviceName, timezoneRequest.getTelePeriod());
 		} catch (ApplicationException e) {
-			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
+		} catch (DeviceOfflineException e) {
+	    	return ResponseEntity.ok(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
 		}
     	
     	LOGGER.info("End ...");
@@ -135,8 +148,9 @@ public class HangarIotController {
     	try {
 			senderService.setTimezoneOffset(deviceName, timezoneRequest.getTimezoneOffset());
 		} catch (ApplicationException e) {
-			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
+		} catch (DeviceOfflineException e) {
+	    	return ResponseEntity.ok(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
 		}
     	
     	LOGGER.info("End ...");
@@ -169,7 +183,12 @@ public class HangarIotController {
     		return ResponseEntity.badRequest().body(null);
     	}
     	
-    	var result = senderService.getTimers(deviceName);
+    	TimersResult result;
+		try {
+			result = senderService.getTimers(deviceName);
+		} catch (DeviceOfflineException e) {
+			return ResponseEntity.ok(null);
+		}
     	LOGGER.info("End ...");
     	return ResponseEntity.ok(result);
     }
@@ -184,8 +203,9 @@ public class HangarIotController {
     	try {
 			senderService.setTimers(timersRequest);
 		} catch (ApplicationException e) {
-			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
+		} catch (DeviceOfflineException e) {
+	    	return ResponseEntity.ok(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
 		}
     	
     	LOGGER.info("End ...");
@@ -200,7 +220,13 @@ public class HangarIotController {
     		return ResponseEntity.badRequest().body(null);
     	}
     	var commandEnum = Enum.valueOf(CommandEnum.class, freeFormatCommandRequest.getCommand().toUpperCase());
-		var abstractBaseResult = senderService.executeCommand(freeFormatCommandRequest.getDeviceName(), commandEnum, freeFormatCommandRequest.getArguments());
+    	AbstractBaseResult abstractBaseResult;
+		try {
+			abstractBaseResult = senderService.executeCommand(freeFormatCommandRequest.getDeviceName(), commandEnum,
+					freeFormatCommandRequest.getArguments());
+		} catch (DeviceOfflineException e) {
+			return ResponseEntity.ok(null);
+		}
 		LOGGER.info("abstractBaseResult: [{}]", abstractBaseResult);
 		var result = commandEnum.getResultType().cast(abstractBaseResult);
 		

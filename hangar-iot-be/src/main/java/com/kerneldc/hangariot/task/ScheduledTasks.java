@@ -2,12 +2,14 @@ package com.kerneldc.hangariot.task;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.NestedExceptionUtils;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kerneldc.hangariot.controller.Device;
 import com.kerneldc.hangariot.exception.ApplicationException;
+import com.kerneldc.hangariot.exception.DeviceOfflineException;
 import com.kerneldc.hangariot.mqtt.result.CommandEnum;
 import com.kerneldc.hangariot.mqtt.service.DeviceService;
 import com.kerneldc.hangariot.mqtt.service.SenderService;
@@ -37,7 +39,11 @@ public class ScheduledTasks {
 		for (Device device: deviceList) {
 			if (Boolean.TRUE.equals(device.getEnableDataSaver())) {
 				LOGGER.info("Increasing telePeriod for device [{}] to [{}]", device.getName(), increaseTelemetryPeriod);
-				senderService.executeCommand(device.getName(), CommandEnum.TELEPERIOD, increaseTelemetryPeriod);
+				try {
+					senderService.executeCommand(device.getName(), CommandEnum.TELEPERIOD, increaseTelemetryPeriod);
+				} catch (DeviceOfflineException e) {
+			    	LOGGER.error("Unable to increaseTelemetryPeriod for device {}", device.getName(),NestedExceptionUtils.getMostSpecificCause(e).getMessage());
+				}
 			}
 		}
 	}
@@ -48,7 +54,12 @@ public class ScheduledTasks {
 		for (Device device: deviceList) {
 			if (Boolean.TRUE.equals(device.getEnableDataSaver())) {
 				LOGGER.info("Decreasing telePeriod for device [{}] to [{}]", device.getName(), decreaseTelemetryPeriod);
-				senderService.executeCommand(device.getName(), CommandEnum.TELEPERIOD, decreaseTelemetryPeriod);
+				try {
+					senderService.executeCommand(device.getName(), CommandEnum.TELEPERIOD, decreaseTelemetryPeriod);
+				} catch (DeviceOfflineException e) {
+					LOGGER.error("Unable to restoreTelemetryPeriod for device {}", device.getName(),
+							NestedExceptionUtils.getMostSpecificCause(e).getMessage());
+				}
 			}
 		}
 	}
