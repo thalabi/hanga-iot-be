@@ -3,6 +3,8 @@ package com.kerneldc.hangariot.mqtt.service;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PostConstruct;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -56,6 +58,9 @@ public class SenderService {
 	private final TopicHelper topicHelper;
 	private final ApplicationCache applicationCache;
 	private final ObjectMapper objectMapper;
+	
+	@Value("${command.execution.timeout:5}")
+	private Integer commandExecutionTimeout;
 
 	@Value("${websocket.topics.prefix:/topic}")
 	private String websocketTopicsPrefix;
@@ -269,8 +274,12 @@ public class SenderService {
 		messageSender.sendMessage(topic, message);
 	}
 
-	private static final int MAX_NUMBER_OF_TRIES = 50;
 	private static final int SLEEP_MILLISECONDS = 100;
+	private int maxNumberOfTries;
+	@PostConstruct
+	public void init () {
+		maxNumberOfTries = commandExecutionTimeout * 1000 / SLEEP_MILLISECONDS;
+	}
 	public AbstractBaseResult waitForCommandToExecute(String deviceName, CommandEnum commandEnum, long commandTimestamp) throws InterruptedException, DeviceOfflineException {
     	AbstractBaseResult result;
     	int count = 0;
@@ -279,10 +288,10 @@ public class SenderService {
 			TimeUnit.MILLISECONDS.sleep(SLEEP_MILLISECONDS);
 			count++;
 			result = applicationCache.getCommandResult(deviceName, commandEnum);
-		} while (result == null && count < MAX_NUMBER_OF_TRIES || result != null && result.getTimestamp() <= commandTimestamp && count < MAX_NUMBER_OF_TRIES);
+		} while (result == null && count < maxNumberOfTries || result != null && result.getTimestamp() <= commandTimestamp && count < maxNumberOfTries);
 		LOGGER.info("Waited [{}] seconds", count * SLEEP_MILLISECONDS / 1000f);
 		
-		if (count == MAX_NUMBER_OF_TRIES) {
+		if (count == maxNumberOfTries) {
 			LOGGER.warn("Timed out waiting for command [{}] to execute on device [{}]", commandEnum, deviceName);
 			LOGGER.warn("Marking device [{}] as Offline", deviceName);
 			var lwtMessage = new LwtMessage("Offline", new Date().getTime());
