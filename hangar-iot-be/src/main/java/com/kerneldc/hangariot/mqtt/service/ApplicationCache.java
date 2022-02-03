@@ -14,6 +14,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.kerneldc.hangariot.mqtt.message.LwtMessage;
+import com.kerneldc.hangariot.mqtt.message.StateMessage;
 import com.kerneldc.hangariot.mqtt.result.AbstractBaseResult;
 import com.kerneldc.hangariot.mqtt.result.CommandEnum;
 
@@ -25,13 +26,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ApplicationCache {
 	
-	private enum DeviceStateEnum {
-		ONLINE, OFFLINE
-	}
-
 	private final ObjectMapper objectMapper;
 	private Map<DeviceNameAndCommandEnum, AbstractBaseResult> resultTopicCache = Collections.synchronizedMap(new HashMap<>());
 	private Map<String, LwtMessage> deviceConnectionStateCache = new HashMap<>();
+	private Map<String, StateMessage> deviceConnectionStateCache2 = new HashMap<>();
 	
 	private record DeviceNameAndCommandEnum(String deviceName, CommandEnum commandEnum) {}
 
@@ -43,7 +41,7 @@ public class ApplicationCache {
 	    	return;
 	    }
 		var result = objectMapper.readValue(message, commandEnum.getResultType());
-		
+		LOGGER.info("before adding to cache, deviceName [{}], commandEnum [{}], result [{}]", deviceName, commandEnum, result);
 		resultTopicCache.put(new DeviceNameAndCommandEnum(deviceName, commandEnum), result);
 	}
 
@@ -56,6 +54,7 @@ public class ApplicationCache {
 		try {
 			return Enum.valueOf(CommandEnum.class, jsonObject.fieldNames().next().toUpperCase());
 		} catch (IllegalArgumentException e) {
+			LOGGER.warn("Could not find a CommandEnum with value matching first field in [{}]", message);
 			return null;
 		}
 	}
@@ -93,6 +92,14 @@ public class ApplicationCache {
 	public void terminate() {
 		resultTopicCache.clear();
 		deviceConnectionStateCache.clear();
+	}
+
+	public StateMessage getConnectionState2(String deviceName) {
+		return deviceConnectionStateCache2.get(deviceName);
+	}
+
+	public void setConnectionState2(String deviceName, StateMessage stateMessage) {
+		deviceConnectionStateCache2.put(deviceName, stateMessage);
 	}
 	
 }

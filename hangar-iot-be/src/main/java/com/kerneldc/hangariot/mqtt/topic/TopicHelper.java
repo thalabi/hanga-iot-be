@@ -26,9 +26,13 @@ public class TopicHelper {
 	
 	private static final String COMMAND_TOPIC_TEMPLATE = "cmnd/<device>/<command>";
 	
+	// received from MQTT and published on WebSocket
 	private static final String LAST_WILL_AND_TESTAMENT_TOPIC_TEMPLATE = "tele/<device>/" + TopicSuffixEnum.LWT;
+	// received from MQTT and published on WebSocket
 	private static final String POWER_TOPIC_TEMPLATE = "stat/<device>/" + TopicSuffixEnum.POWER;
+	// received from MQTT and published on WebSocket
 	private static final String SENSOR_TOPIC_TEMPLATE = "tele/<device>/" + TopicSuffixEnum.SENSOR;
+	// received from MQTT
 	private static final String RESULT_TOPIC_TEMPLATE = "stat/<device>/" + TopicSuffixEnum.RESULT;
 	
 

@@ -22,24 +22,9 @@ import com.kerneldc.hangariot.mqtt.result.AbstractBaseResult;
 import com.kerneldc.hangariot.mqtt.result.CommandEnum;
 import com.kerneldc.hangariot.mqtt.result.PowerResult;
 import com.kerneldc.hangariot.mqtt.result.TelePeriodResult;
-import com.kerneldc.hangariot.mqtt.result.TimersResult;
 import com.kerneldc.hangariot.mqtt.result.TimezoneResult;
-import com.kerneldc.hangariot.mqtt.result.timer.Timer10Result;
-import com.kerneldc.hangariot.mqtt.result.timer.Timer11Result;
-import com.kerneldc.hangariot.mqtt.result.timer.Timer12Result;
-import com.kerneldc.hangariot.mqtt.result.timer.Timer13Result;
-import com.kerneldc.hangariot.mqtt.result.timer.Timer14Result;
-import com.kerneldc.hangariot.mqtt.result.timer.Timer15Result;
-import com.kerneldc.hangariot.mqtt.result.timer.Timer16Result;
-import com.kerneldc.hangariot.mqtt.result.timer.Timer1Result;
-import com.kerneldc.hangariot.mqtt.result.timer.Timer2Result;
-import com.kerneldc.hangariot.mqtt.result.timer.Timer3Result;
-import com.kerneldc.hangariot.mqtt.result.timer.Timer4Result;
-import com.kerneldc.hangariot.mqtt.result.timer.Timer5Result;
-import com.kerneldc.hangariot.mqtt.result.timer.Timer6Result;
-import com.kerneldc.hangariot.mqtt.result.timer.Timer7Result;
-import com.kerneldc.hangariot.mqtt.result.timer.Timer8Result;
-import com.kerneldc.hangariot.mqtt.result.timer.Timer9Result;
+import com.kerneldc.hangariot.mqtt.result.timer.TimerResult;
+import com.kerneldc.hangariot.mqtt.result.timer.TimersResult;
 import com.kerneldc.hangariot.mqtt.topic.TopicHelper;
 import com.kerneldc.hangariot.springconfig.MqttConfig.MessageSender;
 
@@ -126,107 +111,19 @@ public class SenderService {
 		}
 	}
 
+	
 	public void setTimers(TimersRequest timersRequest) throws JsonProcessingException, InterruptedException, ApplicationException, DeviceOfflineException {
 		var applicationException = new ApplicationException();
 
-		if (Boolean.TRUE.equals(timersRequest.getTimer1Modified())) {
-			var timer1Result = (Timer1Result)executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMER1, objectMapper.writeValueAsString(timersRequest.getTimer1()));
-			if (! /* not */ timer1Result.getTimer1().equals(timersRequest.getTimer1())) {
-				applicationException.addMessage(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TIMER1, timersRequest.getTimer1(), timer1Result.getTimer1(), timersRequest.getTimer1()));			
+		for (int i=0; i<16; i++) {
+			if (Boolean.TRUE.equals(timersRequest.getTimerModifiedArray()[i])) {
+				var timer1Result = (TimerResult)executeCommand(timersRequest.getDeviceName(), CommandEnum.valueOf("TIMER"+(i+1)), objectMapper.writeValueAsString(timersRequest.getTimerArray()[i]));
+				if (! /* not */ timer1Result.getTimerXX().equals(timersRequest.getTimerArray()[i])) {
+					applicationException.addMessage(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, "TIMER"+(i+1), timersRequest.getTimerArray()[i], timer1Result.getTimerXX(), timersRequest.getTimerArray()[i]));			
+				}
 			}
 		}
-		if (Boolean.TRUE.equals(timersRequest.getTimer2Modified())) {
-			var timer2Result = (Timer2Result)executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMER2, objectMapper.writeValueAsString(timersRequest.getTimer2()));
-			if (! /* not */ timer2Result.getTimer2().equals(timersRequest.getTimer2())) {
-				applicationException.addMessage(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TIMER2, timersRequest.getTimer1(), timer2Result.getTimer2(), timersRequest.getTimer2()));			
-			}
-		}
-		if (Boolean.TRUE.equals(timersRequest.getTimer3Modified())) {
-			var timer3Result = (Timer3Result)executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMER3, objectMapper.writeValueAsString(timersRequest.getTimer3()));
-			if (! /* not */ timer3Result.getTimer3().equals(timersRequest.getTimer3())) {
-				applicationException.addMessage(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TIMER3, timersRequest.getTimer3(), timer3Result.getTimer3(), timersRequest.getTimer3()));			
-			}
-		}
-		if (Boolean.TRUE.equals(timersRequest.getTimer4Modified())) {
-			var timer4Result = (Timer4Result)executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMER4, objectMapper.writeValueAsString(timersRequest.getTimer4()));
-			if (! /* not */ timer4Result.getTimer4().equals(timersRequest.getTimer4())) {
-				applicationException.addMessage(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TIMER4, timersRequest.getTimer4(), timer4Result.getTimer4(), timersRequest.getTimer4()));			
-			}
-		}
-		if (Boolean.TRUE.equals(timersRequest.getTimer5Modified())) {
-			var timer5Result = (Timer5Result)executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMER5, objectMapper.writeValueAsString(timersRequest.getTimer5()));
-			if (! /* not */ timer5Result.getTimer5().equals(timersRequest.getTimer5())) {
-				applicationException.addMessage(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TIMER5, timersRequest.getTimer5(), timer5Result.getTimer5(), timersRequest.getTimer5()));			
-			}
-		}
-		if (Boolean.TRUE.equals(timersRequest.getTimer6Modified())) {
-			var timer6Result = (Timer6Result)executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMER6, objectMapper.writeValueAsString(timersRequest.getTimer6()));
-			if (! /* not */ timer6Result.getTimer6().equals(timersRequest.getTimer6())) {
-				applicationException.addMessage(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TIMER6, timersRequest.getTimer6(), timer6Result.getTimer6(), timersRequest.getTimer6()));			
-			}
-		}
-		if (Boolean.TRUE.equals(timersRequest.getTimer7Modified())) {
-			var timer7Result = (Timer7Result)executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMER7, objectMapper.writeValueAsString(timersRequest.getTimer7()));
-			if (! /* not */ timer7Result.getTimer7().equals(timersRequest.getTimer7())) {
-				applicationException.addMessage(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TIMER7, timersRequest.getTimer7(), timer7Result.getTimer7(), timersRequest.getTimer7()));			
-			}
-		}
-		if (Boolean.TRUE.equals(timersRequest.getTimer8Modified())) {
-			var timer8Result = (Timer8Result)executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMER8, objectMapper.writeValueAsString(timersRequest.getTimer8()));
-			if (! /* not */ timer8Result.getTimer8().equals(timersRequest.getTimer8())) {
-				applicationException.addMessage(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TIMER8, timersRequest.getTimer8(), timer8Result.getTimer8(), timersRequest.getTimer8()));			
-			}
-		}
-		if (Boolean.TRUE.equals(timersRequest.getTimer9Modified())) {
-			var timer9Result = (Timer9Result)executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMER9, objectMapper.writeValueAsString(timersRequest.getTimer9()));
-			if (! /* not */ timer9Result.getTimer9().equals(timersRequest.getTimer9())) {
-				applicationException.addMessage(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TIMER9, timersRequest.getTimer9(), timer9Result.getTimer9(), timersRequest.getTimer9()));			
-			}
-		}
-		if (Boolean.TRUE.equals(timersRequest.getTimer10Modified())) {
-			var timer10Result = (Timer10Result)executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMER10, objectMapper.writeValueAsString(timersRequest.getTimer10()));
-			if (! /* not */ timer10Result.getTimer10().equals(timersRequest.getTimer10())) {
-				applicationException.addMessage(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TIMER10, timersRequest.getTimer10(), timer10Result.getTimer10(), timersRequest.getTimer10()));			
-			}
-		}
-		if (Boolean.TRUE.equals(timersRequest.getTimer11Modified())) {
-			var timer11Result = (Timer11Result)executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMER11, objectMapper.writeValueAsString(timersRequest.getTimer11()));
-			if (! /* not */ timer11Result.getTimer11().equals(timersRequest.getTimer11())) {
-				applicationException.addMessage(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TIMER11, timersRequest.getTimer11(), timer11Result.getTimer11(), timersRequest.getTimer11()));			
-			}
-		}
-		if (Boolean.TRUE.equals(timersRequest.getTimer12Modified())) {
-			var timer12Result = (Timer12Result)executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMER12, objectMapper.writeValueAsString(timersRequest.getTimer12()));
-			if (! /* not */ timer12Result.getTimer12().equals(timersRequest.getTimer12())) {
-				applicationException.addMessage(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TIMER12, timersRequest.getTimer12(), timer12Result.getTimer12(), timersRequest.getTimer12()));			
-			}
-		}
-		if (Boolean.TRUE.equals(timersRequest.getTimer13Modified())) {
-			var timer13Result = (Timer13Result)executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMER13, objectMapper.writeValueAsString(timersRequest.getTimer13()));
-			if (! /* not */ timer13Result.getTimer13().equals(timersRequest.getTimer13())) {
-				applicationException.addMessage(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TIMER13, timersRequest.getTimer13(), timer13Result.getTimer13(), timersRequest.getTimer13()));			
-			}
-		}
-		if (Boolean.TRUE.equals(timersRequest.getTimer14Modified())) {
-			var timer14Result = (Timer14Result)executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMER14, objectMapper.writeValueAsString(timersRequest.getTimer14()));
-			if (! /* not */ timer14Result.getTimer14().equals(timersRequest.getTimer14())) {
-				applicationException.addMessage(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TIMER14, timersRequest.getTimer14(), timer14Result.getTimer14(), timersRequest.getTimer14()));			
-			}
-		}
-		if (Boolean.TRUE.equals(timersRequest.getTimer15Modified())) {
-			var timer15Result = (Timer15Result)executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMER15, objectMapper.writeValueAsString(timersRequest.getTimer15()));
-			if (! /* not */ timer15Result.getTimer15().equals(timersRequest.getTimer15())) {
-				applicationException.addMessage(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TIMER15, timersRequest.getTimer15(), timer15Result.getTimer15(), timersRequest.getTimer15()));			
-			}
-		}
-		if (Boolean.TRUE.equals(timersRequest.getTimer16Modified())) {
-			var timer16Result = (Timer16Result)executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMER16, objectMapper.writeValueAsString(timersRequest.getTimer16()));
-			if (! /* not */ timer16Result.getTimer16().equals(timersRequest.getTimer16())) {
-				applicationException.addMessage(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TIMER16, timersRequest.getTimer16(), timer16Result.getTimer16(), timersRequest.getTimer16()));			
-			}
-		}
-
-
+		
 		if (Boolean.TRUE.equals(timersRequest.getTimersModified())) {
 			var timersResult = (TimersResult)executeCommand(timersRequest.getDeviceName(), CommandEnum.TIMERS,timersRequest.getTimers());
 			if (! /* not */ StringUtils.equals(timersRequest.getTimers(), timersResult.getTimers())) {
@@ -288,6 +185,7 @@ public class SenderService {
 			TimeUnit.MILLISECONDS.sleep(SLEEP_MILLISECONDS);
 			count++;
 			result = applicationCache.getCommandResult(deviceName, commandEnum);
+			LOGGER.info("result: [{}]", result);
 		} while (result == null && count < maxNumberOfTries || result != null && result.getTimestamp() <= commandTimestamp && count < maxNumberOfTries);
 		LOGGER.info("Waited [{}] seconds", count * SLEEP_MILLISECONDS / 1000f);
 		

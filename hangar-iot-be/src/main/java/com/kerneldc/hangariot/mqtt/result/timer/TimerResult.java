@@ -1,5 +1,6 @@
 package com.kerneldc.hangariot.mqtt.result.timer;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.kerneldc.hangariot.mqtt.command.Timer;
 import com.kerneldc.hangariot.mqtt.result.AbstractBaseResult;
 
@@ -9,7 +10,8 @@ import lombok.ToString;
 
 @Getter @Setter
 @ToString(callSuper = true)
-public class Timer14Result extends AbstractBaseResult {
+@JsonDeserialize(using = TimerResultDeserializer.class)
+public class TimerResult extends AbstractBaseResult {
 
-	private Timer timer14;
+	private Timer timerXX;
 }

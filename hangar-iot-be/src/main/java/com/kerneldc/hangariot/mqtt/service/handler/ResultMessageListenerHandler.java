@@ -11,7 +11,10 @@ import com.kerneldc.hangariot.mqtt.service.ApplicationCache;
 import com.kerneldc.hangariot.mqtt.topic.TopicHelper;
 import com.kerneldc.hangariot.mqtt.topic.TopicHelper.TopicSuffixEnum;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class ResultMessageListenerHandler extends AbstractMessageListenerHandler {
 
 	public ResultMessageListenerHandler(ApplicationCache applicationCache, ObjectMapper objectMapper,
@@ -27,6 +30,7 @@ public class ResultMessageListenerHandler extends AbstractMessageListenerHandler
 	@Override
 	public void handleMessage(String fullTopic, long timestamp, String message) {
 
+		LOGGER.info("fullTopic [{}], timestamp [{}], message [{}]", fullTopic, timestamp, message);
 		try {
 			message = addTimeStampToMessage(timestamp, message);
 		} catch (JsonProcessingException e) {

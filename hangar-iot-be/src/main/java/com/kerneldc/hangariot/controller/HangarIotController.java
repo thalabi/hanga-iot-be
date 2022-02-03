@@ -16,11 +16,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kerneldc.hangariot.exception.ApplicationException;
 import com.kerneldc.hangariot.exception.DeviceOfflineException;
 import com.kerneldc.hangariot.mqtt.result.AbstractBaseResult;
 import com.kerneldc.hangariot.mqtt.result.CommandEnum;
-import com.kerneldc.hangariot.mqtt.result.TimersResult;
+import com.kerneldc.hangariot.mqtt.result.timer.TimersResult;
 import com.kerneldc.hangariot.mqtt.service.ApplicationCache;
 import com.kerneldc.hangariot.mqtt.service.DeviceService;
 import com.kerneldc.hangariot.mqtt.service.SenderService;
@@ -39,6 +40,9 @@ public class HangarIotController {
 	private final DeviceService deviceService;
 	private final ApplicationCache applicationCache;
 	private final ScheduledTasks scheduledTasks;
+	
+	// test
+	private final ObjectMapper objectMapper;
 
     @GetMapping("/ping")
 	public ResponseEntity<PingResponse> ping() {
@@ -189,12 +193,13 @@ public class HangarIotController {
 		} catch (DeviceOfflineException e) {
 			return ResponseEntity.ok(null);
 		}
-    	LOGGER.info("End ...");
+
+		LOGGER.info("End ...");
     	return ResponseEntity.ok(result);
     }
 
     @PostMapping("/setTimers")
-	public ResponseEntity<String> setTimers(@Valid @RequestBody TimersRequest timersRequest) throws InterruptedException, JsonProcessingException {
+    public ResponseEntity<String> setTimers(@Valid @RequestBody TimersRequest timersRequest) throws InterruptedException, JsonProcessingException {    	
     	LOGGER.info("Begin ...");
     	var deviceName = timersRequest.getDeviceName();
     	if (! /* not */ validateDeviceName(deviceName)) {
@@ -202,10 +207,8 @@ public class HangarIotController {
     	}
     	try {
 			senderService.setTimers(timersRequest);
-		} catch (ApplicationException e) {
+		} catch (ApplicationException | DeviceOfflineException e) {
 			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
-		} catch (DeviceOfflineException e) {
-	    	return ResponseEntity.ok(NestedExceptionUtils.getMostSpecificCause(e).getMessage());
 		}
     	
     	LOGGER.info("End ...");

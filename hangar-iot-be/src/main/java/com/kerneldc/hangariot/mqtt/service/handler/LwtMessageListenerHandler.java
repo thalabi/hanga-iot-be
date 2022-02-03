@@ -11,6 +11,7 @@ import com.kerneldc.hangariot.mqtt.service.ApplicationCache;
 import com.kerneldc.hangariot.mqtt.topic.TopicHelper;
 import com.kerneldc.hangariot.mqtt.topic.TopicHelper.TopicSuffixEnum;
 
+
 @Service
 public class LwtMessageListenerHandler extends AbstractMessageListenerHandler {
 
@@ -28,10 +29,16 @@ public class LwtMessageListenerHandler extends AbstractMessageListenerHandler {
 	public void handleMessage(String fullTopic, long timestamp, String message) {
 		
 		var lwtMessage = new LwtMessage(message, new Date().getTime());
+		// TODO
+		//var stateMessage = new StateMessage(ConnectionStateEnum.valueOf(message.toUpperCase()), new Date().getTime());
 
 		applicationCache.setConnectionState(topicHelper.getDeviceName(fullTopic), lwtMessage);
+		// TODO
+		//applicationCache.setConnectionState2(topicHelper.getDeviceName(fullTopic), stateMessage);
 
 		publishMessageToWebSocket(fullTopic, lwtMessage);
+		// TODO
+		//publishMessageToWebSocket(// TODO fullTopic, stateMessage);
 	}
 
 }
