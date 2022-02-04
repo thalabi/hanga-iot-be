@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kerneldc.hangariot.exception.ApplicationException;
 import com.kerneldc.hangariot.exception.DeviceOfflineException;
 import com.kerneldc.hangariot.mqtt.result.AbstractBaseResult;
@@ -41,9 +40,6 @@ public class HangarIotController {
 	private final ApplicationCache applicationCache;
 	private final ScheduledTasks scheduledTasks;
 	
-	// test
-	private final ObjectMapper objectMapper;
-
     @GetMapping("/ping")
 	public ResponseEntity<PingResponse> ping() {
     	LOGGER.info("Begin ...");

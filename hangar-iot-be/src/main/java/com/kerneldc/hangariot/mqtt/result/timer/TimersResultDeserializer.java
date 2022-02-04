@@ -15,10 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.kerneldc.hangariot.mqtt.command.Timer;
 
-import lombok.extern.slf4j.Slf4j;
-
 @Component
-@Slf4j
 public class TimersResultDeserializer extends StdDeserializer<TimersResult> {
 
 	private static final long serialVersionUID = 1L;
@@ -61,6 +58,12 @@ public class TimersResultDeserializer extends StdDeserializer<TimersResult> {
 		return timerResult;
 	}
 
+	/**
+	 * Case insensitive get value of field name
+	 * @param jsonNode
+	 * @param lowerCaseFieldName
+	 * @return the value of the matching field
+	 */
 	private JsonNode getValue(JsonNode jsonNode, String lowerCaseFieldName) {
 		// convert iterator to stream
 		var fieldNameStream = StreamSupport

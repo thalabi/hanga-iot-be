@@ -185,7 +185,6 @@ public class SenderService {
 			TimeUnit.MILLISECONDS.sleep(SLEEP_MILLISECONDS);
 			count++;
 			result = applicationCache.getCommandResult(deviceName, commandEnum);
-			LOGGER.info("result: [{}]", result);
 		} while (result == null && count < maxNumberOfTries || result != null && result.getTimestamp() <= commandTimestamp && count < maxNumberOfTries);
 		LOGGER.info("Waited [{}] seconds", count * SLEEP_MILLISECONDS / 1000f);
 		

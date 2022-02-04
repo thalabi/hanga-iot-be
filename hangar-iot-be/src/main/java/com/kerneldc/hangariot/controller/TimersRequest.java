@@ -3,8 +3,8 @@ package com.kerneldc.hangariot.controller;
 
 import javax.validation.constraints.NotBlank;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.kerneldc.hangariot.mqtt.result.timer.TimersResult;
+import com.kerneldc.hangariot.mqtt.command.Timer;
+import com.kerneldc.hangariot.mqtt.result.AbstractBaseResult;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -14,13 +14,14 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 
-@JsonDeserialize(using = TimersRequestDeserializer.class)
-public class TimersRequest extends TimersResult {
+public class TimersRequest extends AbstractBaseResult {
 
 	@NotBlank(message = "Device name is missing")
 	private String deviceName;
 	
+	private String timers; // ON or OFF
 	private Boolean timersModified;
-	
+
+	private Timer[] timerArray = new Timer[16];
 	private Boolean[] timerModifiedArray = new Boolean[16];
 }

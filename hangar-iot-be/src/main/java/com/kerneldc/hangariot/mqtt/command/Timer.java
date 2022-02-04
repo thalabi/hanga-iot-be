@@ -13,8 +13,6 @@ import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 
 import lombok.Data;
 
-//@Getter @Setter
-//@ToString
 @Data
 public class Timer {
 

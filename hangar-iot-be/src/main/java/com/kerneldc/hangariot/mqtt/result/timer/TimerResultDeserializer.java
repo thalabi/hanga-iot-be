@@ -40,9 +40,9 @@ public class TimerResultDeserializer extends StdDeserializer<TimerResult> {
 	@Override
 	public TimerResult deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
 		LOGGER.info("Begin ...");
-		var timerXXResult = new TimerResult();
+		var timerResult = new TimerResult();
 		JsonNode node = jp.getCodec().readTree(jp);
-		timerXXResult.setTimestamp(node.get("timestamp").asLong());
+		timerResult.setTimestamp(node.get("timestamp").asLong());
 		
 		// convert iterator to stream
 		Stream<String> fieldNameStream = StreamSupport
@@ -51,12 +51,12 @@ public class TimerResultDeserializer extends StdDeserializer<TimerResult> {
 		Optional<String> timerFieldName = fieldNameStream.filter(fieldName -> StringUtils.startsWithIgnoreCase(fieldName, "timer")).findAny();
 		if (timerFieldName.isEmpty()) {
 			LOGGER.warn("Could not find field name [time??] when deserializing object");
-			return timerXXResult;
+			return timerResult;
 		}
-		timerXXResult.setTimerXX(objectMapper.treeToValue(node.get(timerFieldName.get()), Timer.class));
+		timerResult.setTimerXX(objectMapper.treeToValue(node.get(timerFieldName.get()), Timer.class));
 		
 		LOGGER.info("End ...");
-		return timerXXResult;
+		return timerResult;
 	}
 
 }
