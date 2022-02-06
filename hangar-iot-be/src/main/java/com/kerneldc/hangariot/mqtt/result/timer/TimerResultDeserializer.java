@@ -37,6 +37,7 @@ public class TimerResultDeserializer extends StdDeserializer<TimerResult> {
 		super(vc);
 	}
 
+	// TODO write documentation
 	@Override
 	public TimerResult deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
 		LOGGER.info("Begin ...");

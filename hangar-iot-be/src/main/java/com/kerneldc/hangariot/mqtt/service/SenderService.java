@@ -43,6 +43,7 @@ public class SenderService {
 	private final TopicHelper topicHelper;
 	private final ApplicationCache applicationCache;
 	private final ObjectMapper objectMapper;
+	private final DeviceService deviceService;
 	
 	@Value("${command.execution.timeout:5}")
 	private Integer commandExecutionTimeout;
@@ -155,14 +156,20 @@ public class SenderService {
 		return executeCommand(device, commandEnum, stringArgument, true);
 	}
 	
-	private synchronized AbstractBaseResult executeCommand(String device, CommandEnum commandEnum, String stringArgument, boolean wait) throws InterruptedException, DeviceOfflineException {
-		if (wait) {
-			var commandTimestamp = new Date().getTime();
-			sendMessage(topicHelper.getCommandTopic(commandEnum, device), stringArgument);
-			return waitForCommandToExecute(device, commandEnum, commandTimestamp); 
-		} else {
-			sendMessage(topicHelper.getCommandTopic(commandEnum, device), stringArgument);
-			return null;
+	private AbstractBaseResult executeCommand(String deviceName, CommandEnum commandEnum, String stringArgument, boolean wait) throws InterruptedException, DeviceOfflineException {
+		var device = deviceService.getDevice(deviceName);
+		try {
+			device.getLock().lock();
+			if (wait) {
+				var commandTimestamp = new Date().getTime();
+				sendMessage(topicHelper.getCommandTopic(commandEnum, deviceName), stringArgument);
+				return waitForCommandToExecute(deviceName, commandEnum, commandTimestamp); 
+			} else {
+				sendMessage(topicHelper.getCommandTopic(commandEnum, deviceName), stringArgument);
+				return null;
+			}
+		} finally {
+			device.getLock().unlock();
 		}
 	}
 

@@ -1,5 +1,7 @@
 package com.kerneldc.hangariot.controller;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 import lombok.Data;
 
 @Data
@@ -16,4 +18,7 @@ public class Device {
 	private String iotDeviceModel;
 	private Boolean enableDataSaver;
 	private DeviceConfigData config;
+	
+	
+	private ReentrantLock lock = new ReentrantLock();
 }

@@ -3,6 +3,7 @@ package com.kerneldc.hangariot.mqtt.service;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,10 @@ public class DeviceService {
 	
 	public List<Device> getDeviceList() {
 		return deviceListPropertyHolder.getDeviceList();
+	}
+	
+	public Device getDevice(String name) {
+		return getDeviceList().stream().filter(device -> StringUtils.equals(device.getName(), name)).findAny().orElse(null);
 	}
 	
 	public List<String> getDeviceNameList() {
