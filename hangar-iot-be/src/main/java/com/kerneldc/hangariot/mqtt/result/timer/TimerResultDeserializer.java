@@ -37,7 +37,9 @@ public class TimerResultDeserializer extends StdDeserializer<TimerResult> {
 		super(vc);
 	}
 
-	// TODO write documentation
+	/**
+	 * This deserializer will create a TimerResult on any field name that starts with string 'timer'
+	 */
 	@Override
 	public TimerResult deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
 		LOGGER.info("Begin ...");
