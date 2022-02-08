@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TopicHelper {
 	
 	public enum TopicSuffixEnum {
-		LWT, POWER, SENSOR, RESULT
+		LWT, STATE, POWER, SENSOR, RESULT
 	}
 
 	private static final String DEVICE_ARG = "<device>";
@@ -28,6 +28,7 @@ public class TopicHelper {
 	
 	// received from MQTT and published on WebSocket
 	private static final String LAST_WILL_AND_TESTAMENT_TOPIC_TEMPLATE = "tele/<device>/" + TopicSuffixEnum.LWT;
+	private static final String CONNECTION_STATE_TOPIC_TEMPLATE = "tele/<device>/" + TopicSuffixEnum.STATE;
 	// received from MQTT and published on WebSocket
 	private static final String POWER_TOPIC_TEMPLATE = "stat/<device>/" + TopicSuffixEnum.POWER;
 	// received from MQTT and published on WebSocket
@@ -44,8 +45,8 @@ public class TopicHelper {
 				.replace("<command>", commandEnum.getCommand());
 	}
 
-	public String getLwtTopic(String deviceName) {
-		return LAST_WILL_AND_TESTAMENT_TOPIC_TEMPLATE.replace(DEVICE_ARG, deviceName);
+	public String getStateTopic(String deviceName) {
+		return CONNECTION_STATE_TOPIC_TEMPLATE.replace(DEVICE_ARG, deviceName);
 	}
 
 
@@ -72,5 +73,9 @@ public class TopicHelper {
 		} else {
 			return StringUtils.EMPTY;
 		}
+	}
+	
+	public String transformLwtToState(String lwtTopic) {
+		return lwtTopic.replace("/LWT", "/STATE");
 	}
 }

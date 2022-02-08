@@ -218,7 +218,7 @@ public class HangarIotController {
     	if (! /* not */ validateDeviceName(deviceName)) {
     		return ResponseEntity.badRequest().body(null);
     	}
-    	var commandEnum = Enum.valueOf(CommandEnum.class, freeFormatCommandRequest.getCommand().toUpperCase());
+    	var commandEnum = CommandEnum.valueOf(freeFormatCommandRequest.getCommand().toUpperCase());
     	AbstractBaseResult abstractBaseResult;
 		try {
 			abstractBaseResult = senderService.executeCommand(freeFormatCommandRequest.getDeviceName(), commandEnum,

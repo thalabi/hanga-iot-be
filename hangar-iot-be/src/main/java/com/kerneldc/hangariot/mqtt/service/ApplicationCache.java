@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.kerneldc.hangariot.mqtt.message.LwtMessage;
+import com.kerneldc.hangariot.mqtt.message.ConnectionStateEnum;
 import com.kerneldc.hangariot.mqtt.message.StateMessage;
 import com.kerneldc.hangariot.mqtt.result.AbstractBaseResult;
 import com.kerneldc.hangariot.mqtt.result.CommandEnum;
@@ -28,8 +28,7 @@ public class ApplicationCache {
 	
 	private final ObjectMapper objectMapper;
 	private Map<DeviceNameAndCommandEnum, AbstractBaseResult> resultTopicCache = Collections.synchronizedMap(new HashMap<>());
-	private Map<String, LwtMessage> deviceConnectionStateCache = new HashMap<>();
-	private Map<String, StateMessage> deviceConnectionStateCache2 = new HashMap<>();
+	private Map<String, StateMessage> deviceConnectionStateCache = new HashMap<>();
 	
 	private record DeviceNameAndCommandEnum(String deviceName, CommandEnum commandEnum) {}
 
@@ -41,7 +40,6 @@ public class ApplicationCache {
 	    	return;
 	    }
 		var result = objectMapper.readValue(message, commandEnum.getResultType());
-		LOGGER.info("before adding to cache, deviceName [{}], commandEnum [{}], result [{}]", deviceName, commandEnum, result);
 		resultTopicCache.put(new DeviceNameAndCommandEnum(deviceName, commandEnum), result);
 	}
 
@@ -52,7 +50,7 @@ public class ApplicationCache {
 	private CommandEnum getCommandEnum(String message) throws JsonProcessingException {
 		var jsonObject = objectMapper.readValue(message, ObjectNode.class);
 		try {
-			return Enum.valueOf(CommandEnum.class, jsonObject.fieldNames().next().toUpperCase());
+			return CommandEnum.valueOf(jsonObject.fieldNames().next().toUpperCase());
 		} catch (IllegalArgumentException e) {
 			LOGGER.warn("Could not find a CommandEnum with value matching first field in [{}]", message);
 			return null;
@@ -76,15 +74,17 @@ public class ApplicationCache {
 		}
 	}
 	
-	public LwtMessage getConnectionState(String deviceName) {
+	public StateMessage getConnectionState(String deviceName) {
 		return deviceConnectionStateCache.get(deviceName);
 	}
-	public void setConnectionState(String deviceName, LwtMessage lwtMessage) {
-		deviceConnectionStateCache.put(deviceName, lwtMessage);
+
+	public void setConnectionState(String deviceName, StateMessage stateMessage) {
+		deviceConnectionStateCache.put(deviceName, stateMessage);
 	}
+
 	public boolean isDeviceOnLine(String deviceName) {
-		var lwtMessage = getConnectionState(deviceName);
-		return StringUtils.equalsAnyIgnoreCase(lwtMessage.getLwt(), "Online");
+		var stateMessage = getConnectionState(deviceName);
+		return stateMessage.getState() == ConnectionStateEnum.ONLINE;
 	}
 	
 	
@@ -94,12 +94,5 @@ public class ApplicationCache {
 		deviceConnectionStateCache.clear();
 	}
 
-	public StateMessage getConnectionState2(String deviceName) {
-		return deviceConnectionStateCache2.get(deviceName);
-	}
-
-	public void setConnectionState2(String deviceName, StateMessage stateMessage) {
-		deviceConnectionStateCache2.put(deviceName, stateMessage);
-	}
 	
 }

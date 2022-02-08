@@ -17,7 +17,8 @@ import com.kerneldc.hangariot.controller.TimeStdRequest;
 import com.kerneldc.hangariot.controller.TimersRequest;
 import com.kerneldc.hangariot.exception.ApplicationException;
 import com.kerneldc.hangariot.exception.DeviceOfflineException;
-import com.kerneldc.hangariot.mqtt.message.LwtMessage;
+import com.kerneldc.hangariot.mqtt.message.ConnectionStateEnum;
+import com.kerneldc.hangariot.mqtt.message.StateMessage;
 import com.kerneldc.hangariot.mqtt.result.AbstractBaseResult;
 import com.kerneldc.hangariot.mqtt.result.CommandEnum;
 import com.kerneldc.hangariot.mqtt.result.PowerResult;
@@ -77,6 +78,7 @@ public class SenderService {
 
 
 	private void checkDeviceOnline(String deviceName) throws DeviceOfflineException {
+//		if (! /* not */ applicationCache.isDeviceOnLine(deviceName)) {
 		if (! /* not */ applicationCache.isDeviceOnLine(deviceName)) {
 			throw new DeviceOfflineException();
 		}
@@ -88,7 +90,7 @@ public class SenderService {
 
 	public void setTelePeriod(String device, String telePeriod) throws InterruptedException, ApplicationException, DeviceOfflineException {
 		var result = (TelePeriodResult)executeCommand(device, CommandEnum.TELEPERIOD, telePeriod);
-		if (! /* not */ applicationCache.isDeviceOnLine(device)) {
+		if (! /* not */ applicationCache.isDeviceOnLine(device)) {			
 			return;
 		}
 		if (! /* not */ result.getTelePeriod().equals(Integer.valueOf(telePeriod))) {
@@ -192,14 +194,14 @@ public class SenderService {
 			TimeUnit.MILLISECONDS.sleep(SLEEP_MILLISECONDS);
 			count++;
 			result = applicationCache.getCommandResult(deviceName, commandEnum);
-		} while (result == null && count < maxNumberOfTries || result != null && result.getTimestamp() <= commandTimestamp && count < maxNumberOfTries);
+		} while ((result == null && count < maxNumberOfTries) || (result != null && result.getTimestamp() <= commandTimestamp && count < maxNumberOfTries));
 		LOGGER.info("Waited [{}] seconds", count * SLEEP_MILLISECONDS / 1000f);
 		
 		if (count == maxNumberOfTries) {
 			LOGGER.warn("Timed out waiting for command [{}] to execute on device [{}]", commandEnum, deviceName);
-			LOGGER.warn("Marking device [{}] as Offline", deviceName);
-			var lwtMessage = new LwtMessage("Offline", new Date().getTime());
-			applicationCache.setConnectionState(deviceName, lwtMessage);
+			LOGGER.warn("Marking device [{}] as UNREACHABLE", deviceName);
+			var stateMessage = new StateMessage(ConnectionStateEnum.UNREACHABLE, new Date().getTime());
+			applicationCache.setConnectionState(deviceName, stateMessage);
 			triggerPublishConnectionState(deviceName);
 			throw new DeviceOfflineException();
 		}
@@ -208,8 +210,8 @@ public class SenderService {
 
 
     public void triggerPublishConnectionState(String deviceName) {
-    	LOGGER.info("Publishing LwtMessage message [{}] of device [{}]", applicationCache.getConnectionState(deviceName), deviceName);
-    	var webSocketTopic = websocketTopicsPrefix + "/state-and-telemetry/" + topicHelper.getLwtTopic(deviceName);
+    	LOGGER.info("Publishing StateMessage message [{}] of device [{}]", applicationCache.getConnectionState(deviceName), deviceName);
+    	var webSocketTopic = websocketTopicsPrefix + "/state-and-telemetry/" + topicHelper.getStateTopic(deviceName);
     	webSocket.convertAndSend(webSocketTopic, applicationCache.getConnectionState(deviceName));
     }
 

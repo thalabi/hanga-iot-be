@@ -8,6 +8,7 @@ public enum CommandEnum {
 	TIMEZONE("timezone", TimezoneResult.class),
 	TIMEDST("timedst", TimeDstResult.class),
 	TIMESTD("timestd", TimeStdResult.class),
+	TIME("time", TimeResult.class),
 	TELEPERIOD("teleperiod", TelePeriodResult.class),
 	LATITUDE("latitude", LatitudeResult.class),
 	LONGITUDE("longitude", LongitudeResult.class),
