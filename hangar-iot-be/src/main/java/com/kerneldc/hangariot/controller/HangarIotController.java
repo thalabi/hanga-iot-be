@@ -9,6 +9,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -236,11 +239,13 @@ public class HangarIotController {
     @GetMapping("/getDeviceList")
 	public ResponseEntity<List<DeviceResponse>> getDeviceList() {
     	LOGGER.info("Begin ...");
-    	var deviceResponseList = deviceService.getDeviceList().stream().map(device -> {
+    	var authorizedDeviceNames = getAuthorizedDeviceNames();
+    	var deviceResponseList = deviceService.getDeviceList().stream().filter(device -> authorizedDeviceNames.contains(device.getName())).map(device -> {
     		var deviceResponse = new DeviceResponse();
     		deviceResponse.setDevice(device);
     		return deviceResponse;
     	}).toList();
+
     	LOGGER.info("End ...");
     	return ResponseEntity.ok(deviceResponseList);
     }
@@ -285,5 +290,22 @@ public class HangarIotController {
     }
     private boolean validateDeviceName(String deviceName) {
     	return deviceService.getDeviceNameList().contains(deviceName);
+    }
+    private Authentication getAuthentication() {
+    	Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    	if (!(authentication instanceof AnonymousAuthenticationToken)) {
+    	    LOGGER.info("authentication:  [{}]", authentication);
+    	    return authentication;
+    	} else {
+    		return null;
+    	}
+    }
+    private List<String> getAuthorizedDeviceNames() {
+    	var authentication = getAuthentication();
+    	if (authentication != null) {
+    		return authentication.getAuthorities().stream().map(authority -> authority.getAuthority()).toList();
+    	} else {
+    		return null;
+    	}
     }
 }

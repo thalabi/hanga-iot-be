@@ -18,6 +18,7 @@ public class Device {
 	private String iotDeviceModel;
 	private Boolean enableDataSaver;
 	private DeviceConfigData config;
+	private DeviceGroupEnum group;
 	
 	
 	private ReentrantLock lock = new ReentrantLock();

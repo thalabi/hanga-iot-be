@@ -30,9 +30,9 @@ public abstract class AbstractPersistableEntity extends AbstractEntity implement
 	private Long version;
 
 //	@Transient
-	private Long sourceCsvLineNumber;
+//	private Long sourceCsvLineNumber;
 //	@Transient
-	private String[] sourceCsvLine;
+//	private String[] sourceCsvLine;
 	
     protected abstract void setLogicalKeyHolder();
 }

@@ -2,6 +2,7 @@ package com.kerneldc.hangariot.security.service.repository;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
@@ -40,8 +41,9 @@ public class UserRepositoryImpl implements UserRepository {
 		try {
 			userList = objectMapper.readValue(userJsonResource.getInputStream(), new TypeReference<List<User>>(){});
 			for (User user: userList) {
+				user.setPermissionSet(user.getGroupSet().stream().flatMap(group -> group.getPermissionSet().stream()).collect(Collectors.toSet()));
 				LOGGER.info("Loaded User, username: [{}]", user.getUsername());
-			}
+				LOGGER.info("user: [{}]", user);			}
 		} catch (IOException e) {
 			LOGGER.error("Unable to read and parse user.json file. Reason: {}", ExceptionUtils.getRootCause(e));
 		}

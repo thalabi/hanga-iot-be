@@ -2,9 +2,12 @@ package com.kerneldc.hangariot.security.domain.user;
 
 import java.security.Key;
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.function.Function;
 
 import com.kerneldc.hangariot.security.domain.AbstractPersistableEntity;
+import com.kerneldc.hangariot.security.domain.group.Group;
+import com.kerneldc.hangariot.security.domain.permission.Permission;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -50,10 +53,10 @@ public class User extends AbstractPersistableEntity {
         joinColumns = @JoinColumn(name = "user_id"), 
         inverseJoinColumns = @JoinColumn( name="group_id"))
 */         
-//    private Set<Group> groupSet;// = new HashSet<>(); 
+    private Set<Group> groupSet;// = new HashSet<>(); 
 
 //    @Transient 
-//    private Set<Permission> permissionSet; 
+    private Set<Permission> permissionSet; 
 
 	private LocalDateTime created = LocalDateTime.now();
 	private LocalDateTime modified = LocalDateTime.now();

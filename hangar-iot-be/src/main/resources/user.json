@@ -3,6 +3,71 @@
 	"id": 1,
 	"username": "thalabi",
 	"password": "$2a$10$NeJHdLRWn5sWerDE0PCxhOCYeG4yMPYeB/dkTtN.yn20ueYv7et/O",
-	"enabled": "true"
+	"enabled": "true",
+	"groupSet": [
+				{
+				"id": 1,
+				"name": "hangar",
+				"description": "hangar devices",
+				"permissionSet": [
+								 {
+								 "id": 1,
+								 "name": "cabin-heater"
+								 },
+								 {
+								 "id": 2,
+								 "name": "tanis-heater"
+								 }
+								 ]
+				},
+				{
+				"id": 2,
+				"name": "home",
+				"description": "home devices",
+				"permissionSet": [
+								 {
+								 "id": 4,
+								 "name": "family-room-light"
+								 },
+								 {
+								 "id": 5,
+								 "name": "living-room-light"
+								 },
+								 {
+								 "id": 6,
+								 "name": "s-31-sandbox"
+								 }
+								 ]
+				}
+				]
+				
+},
+{
+	"id": 2,
+	"username": "home",
+	"password": "$2a$10$NeJHdLRWn5sWerDE0PCxhOCYeG4yMPYeB/dkTtN.yn20ueYv7et/O",
+	"enabled": "true",
+	"groupSet": [
+				{
+				"id": 2,
+				"name": "home",
+				"description": "home devices",
+				"permissionSet": [
+								 {
+								 "id": 4,
+								 "name": "family-room-light"
+								 },
+								 {
+								 "id": 5,
+								 "name": "living-room-light"
+								 },
+								 {
+								 "id": 6,
+								 "name": "s-31-sandbox"
+								 }
+								 ]
+				}
+				]
+				
 }
 ]
