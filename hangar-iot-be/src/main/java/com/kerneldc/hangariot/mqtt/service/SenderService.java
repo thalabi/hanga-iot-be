@@ -17,6 +17,7 @@ import com.kerneldc.hangariot.controller.TimeStdRequest;
 import com.kerneldc.hangariot.controller.TimersRequest;
 import com.kerneldc.hangariot.exception.ApplicationException;
 import com.kerneldc.hangariot.exception.DeviceOfflineException;
+import com.kerneldc.hangariot.exception.UnexpectedCommandResultException;
 import com.kerneldc.hangariot.mqtt.message.ConnectionStateEnum;
 import com.kerneldc.hangariot.mqtt.message.StateMessage;
 import com.kerneldc.hangariot.mqtt.result.AbstractBaseResult;
@@ -65,14 +66,14 @@ public class SenderService {
 		executeCommand(device, CommandEnum.POWER);
 	}
 
-	public void triggerPublishSensorData(String device) throws InterruptedException, ApplicationException, DeviceOfflineException {
+	public void triggerPublishSensorData(String device) throws InterruptedException, ApplicationException {
 		checkDeviceOnline(device);
 		// issue the command without an argument to get the teleperiod value
 		var result = (TelePeriodResult)executeCommand(device, CommandEnum.TELEPERIOD);
 		// issue the command again with the retrieved argument to trigger an update on the SENSOR topic
 		var result2 = (TelePeriodResult)executeCommand(device, CommandEnum.TELEPERIOD, String.valueOf(result.getTelePeriod()));
 		if (! /* not */ result.getTelePeriod().equals(result2.getTelePeriod())) {
-			throw new ApplicationException(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TELEPERIOD, result.getTelePeriod(), result2.getTelePeriod(), result.getTelePeriod()));
+			throw new UnexpectedCommandResultException(String.format(UNEXPECTED_RESULT_MESSAGE_FORMAT, CommandEnum.TELEPERIOD, result.getTelePeriod(), result2.getTelePeriod(), result.getTelePeriod()));
 		}
 	}
 

@@ -1,50 +1,26 @@
 package com.kerneldc.hangariot.exception;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.commons.lang3.StringUtils;
-
-public class DeviceOfflineException extends Exception {
+public class DeviceOfflineException extends ApplicationException {
 
 	private static final long serialVersionUID = 1L;
-	private final List<String> messageList = new ArrayList<>();
-
 	public DeviceOfflineException() {
+		super();
+	}
+
+	public DeviceOfflineException(String message, Throwable arg1, boolean arg2, boolean arg3) {
+		super(message, arg1, arg2, arg3);
+	}
+
+	public DeviceOfflineException(String message, Throwable arg1) {
+		super(message, arg1);
 	}
 
 	public DeviceOfflineException(String message) {
 		super(message);
-		addMessage(message);
 	}
 
 	public DeviceOfflineException(Throwable arg0) {
 		super(arg0);
 	}
 
-	public DeviceOfflineException(String message, Throwable arg1) {
-		super(message, arg1);
-		addMessage(message);
-	}
-
-	public DeviceOfflineException(String message, Throwable arg1, boolean arg2, boolean arg3) {
-		super(message, arg1, arg2, arg3);
-		addMessage(message);
-	}
-
-	@Override
-	public String getMessage() {
-		return String.join(System.lineSeparator(), messageList);
-	}
-
-	public List<String> addMessage(String message) {
-		if (StringUtils.isNotEmpty(message)) {
-			messageList.add(message);
-		}
-		return messageList;
-	}
-
-	public List<String> getMessageList() {
-		return messageList;
-	}
 }
