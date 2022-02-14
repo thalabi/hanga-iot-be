@@ -69,5 +69,29 @@
 				}
 				]
 				
+},
+{
+	"id": 3,
+	"username": "hangar",
+	"password": "$2a$10$NeJHdLRWn5sWerDE0PCxhOCYeG4yMPYeB/dkTtN.yn20ueYv7et/O",
+	"enabled": "true",
+	"groupSet": [
+				{
+				"id": 1,
+				"name": "hangar",
+				"description": "hangar devices",
+				"permissionSet": [
+								 {
+								 "id": 1,
+								 "name": "cabin-heater"
+								 },
+								 {
+								 "id": 2,
+								 "name": "tanis-heater"
+								 }
+								 ]
+				}
+				]
+				
 }
 ]
