@@ -99,6 +99,7 @@
 				<configuration>
 				<!-- Make this jar fully executable -->
 					<executable>true</executable>
+					<layout>ZIP</layout>
 					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>
