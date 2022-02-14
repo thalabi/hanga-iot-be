@@ -30,9 +30,6 @@ public class InitializeApplication implements ApplicationRunner {
 //			senderService.getPowerState(device);
 //			senderService.triggerSensorData(device);
 //		}
-		
-		var classpath = System.getProperty("java.class.path");
-		LOGGER.info("classpath: [{}]" + classpath);
 	}
 
 }
