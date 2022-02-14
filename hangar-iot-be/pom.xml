@@ -105,8 +105,6 @@
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
-					<!-- add current directory to classpath -->
-					<directories>.</directories>
 				</configuration>
 			</plugin>
 		</plugins>
