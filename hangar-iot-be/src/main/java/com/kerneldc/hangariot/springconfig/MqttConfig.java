@@ -28,7 +28,7 @@ import com.kerneldc.hangariot.mqtt.topic.TopicHelper;
 @IntegrationComponentScan
 public class MqttConfig {
 
-	@Value("${mqtt.host}")
+	@Value("${mqtt.hostname}")
 	protected String BROKER_HOST;
 	@Value("${mqtt.port:1883}")
 	protected String BROKER_PORT;
